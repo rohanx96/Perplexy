@@ -4,13 +4,11 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,9 +18,9 @@ import android.widget.Toast;
 
 import com.contextgenesis.perplexy.ui.ContributeActivity;
 import com.contextgenesis.perplexy.ui.HelpActivity;
-import com.kyleduo.switchbutton.SwitchButton;
-import com.orhanobut.dialogplus.DialogPlus;
-import com.orhanobut.dialogplus.ViewHolder;
+import androidx.appcompat.widget.SwitchCompat;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import androidx.appcompat.app.AlertDialog;
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.AboutActivity;
@@ -43,7 +41,7 @@ public class SettingsFragment extends Fragment {
     SharedPreferences.Editor editor;
 
     @Bind(R.id.switchButton)
-    SwitchButton volume;
+    SwitchCompat volume;
 
     @Bind(R.id.settings_reset)
     TextView reset;
@@ -100,17 +98,11 @@ public class SettingsFragment extends Fragment {
         SoundManager.playButtonClickSound(getActivity());
         pref = getContext().getSharedPreferences(Constants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
 
-        final DialogPlus dialog = DialogPlus.newDialog(getContext())
-                .setGravity(Gravity.BOTTOM)
-                .setOverlayBackgroundResource(Color.TRANSPARENT)
-                .setContentHolder(new ViewHolder(R.layout.reset_confirmation))
-                .setContentWidth(ViewGroup.LayoutParams.MATCH_PARENT)
-                .setPadding(16, 16, 16, 16)
-                .setContentHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.reset_confirmation, null);
+        final AlertDialog dialog = new MaterialAlertDialogBuilder(getContext())
+                .setView(dialogView)
                 .create();
         dialog.show();
-
-        View dialogView = dialog.getHolderView();
 
         TextView yes = (TextView) dialogView.findViewById(R.id.yes_reset);
         TextView no = (TextView) dialogView.findViewById(R.id.no_reset);
@@ -120,18 +112,15 @@ public class SettingsFragment extends Fragment {
             public void onClick(View v) {
                 GenericAnswerDetails.initializeDatabase(getActivity());
                 SharedPreferences.Editor editor = pref.edit();
-
                 editor.putLong(Constants.PREF_COINS, Constants.INITIAL_COINS).apply();
                 editor.putLong(Constants.PREF_COINS_SPENT, 0).apply();
                 editor.putLong(Constants.PREF_COINS_EARNED, Constants.INITIAL_COINS).apply();
-
                 editor.putInt(Constants.CORRECT_COUNT, 0).apply();
                 editor.putInt(Constants.INCORRECT_COUNT, 0).apply();
                 editor.putFloat(Constants.ACCURACY, 0f).apply();
                 dialog.dismiss();
             }
         });
-
         no.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

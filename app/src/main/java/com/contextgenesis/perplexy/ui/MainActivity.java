@@ -16,9 +16,9 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.orhanobut.dialogplus.DialogPlus;
-import com.orhanobut.dialogplus.DialogPlusBuilder;
-import com.orhanobut.dialogplus.ViewHolder;
+import android.view.LayoutInflater;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import androidx.appcompat.app.AlertDialog;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.fragments.FrontPageFragment;
 import com.contextgenesis.perplexy.ui.fragments.SettingsFragment;
@@ -26,7 +26,7 @@ import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.ui.fragments.StatisticsFragment;
 import com.contextgenesis.perplexy.utils.Constants;
-import com.viewpagerindicator.CirclePageIndicator;
+import me.relex.circleindicator.CircleIndicator;
 
 import butterknife.ButterKnife;
 
@@ -39,7 +39,7 @@ public class MainActivity extends FragmentActivity {
 
     private PagerAdapter mPagerAdapter;
 
-    CirclePageIndicator circlePageIndicator;
+    CircleIndicator circlePageIndicator;
     FallingDrawables fallingDrawables;
 
     @Override
@@ -52,7 +52,7 @@ public class MainActivity extends FragmentActivity {
         // Instantiate a ViewPager and a PagerAdapter.
         mPager = (ViewPager) findViewById(R.id.questions_activity_pager);
         mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        circlePageIndicator = (CirclePageIndicator) findViewById(R.id.indicator);
+        circlePageIndicator = (CircleIndicator) findViewById(R.id.indicator);
         mPager.setAdapter(mPagerAdapter);
         circlePageIndicator.setViewPager(mPager);
         mPager.setCurrentItem(1, false);
@@ -144,11 +144,11 @@ public class MainActivity extends FragmentActivity {
         Log.i("show rate", " " + prefCount);
         if (prefCount != -2) {
             if (prefCount > 3) {
-                DialogPlusBuilder dialogPlus = DialogPlus.newDialog(this);
-                dialogPlus.setContentHolder(new ViewHolder(R.layout.dialog_rate_us));
-                final DialogPlus dialog = dialogPlus.create();
-                View holder = dialog.getHolderView();
-                holder.findViewById(R.id.rate_us_confirm).setOnClickListener(new View.OnClickListener() {
+                View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_rate_us, null);
+                final AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                        .setView(dialogView)
+                        .create();
+                dialogView.findViewById(R.id.rate_us_confirm).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Uri uri = Uri.parse("market://details?id=" + getPackageName());
@@ -162,14 +162,14 @@ public class MainActivity extends FragmentActivity {
                         dialog.dismiss();
                     }
                 });
-                holder.findViewById(R.id.rate_us_remind_later).setOnClickListener(new View.OnClickListener() {
+                dialogView.findViewById(R.id.rate_us_remind_later).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         prefs.edit().putInt(Constants.PREF_SHOW_RATE_US, 0).apply();
                         dialog.dismiss();
                     }
                 });
-                holder.findViewById(R.id.rate_us_never).setOnClickListener(new View.OnClickListener() {
+                dialogView.findViewById(R.id.rate_us_never).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         prefs.edit().putInt(Constants.PREF_SHOW_RATE_US, -2).apply();
