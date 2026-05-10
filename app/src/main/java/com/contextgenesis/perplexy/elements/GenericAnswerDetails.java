@@ -1,15 +1,15 @@
 package com.contextgenesis.perplexy.elements;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
 import com.contextgenesis.perplexy.ui.HelpActivity;
-import com.orm.SugarRecord;
-import com.orm.query.Condition;
-import com.orm.query.Select;
-import com.orm.util.NamingHelper;
 import com.contextgenesis.perplexy.ui.LoadingActivity;
 import com.contextgenesis.perplexy.ui.MainActivity;
 import com.contextgenesis.perplexy.utils.Constants;
@@ -22,7 +22,11 @@ import java.util.List;
  * Created by rish on 10/3/16.
  */
 
-public class GenericAnswerDetails extends SugarRecord {
+@Entity
+public class GenericAnswerDetails {
+
+    @PrimaryKey(autoGenerate = true)
+    public long id;
 
     public int question_number;
     public int category, status;                                /*correct, incorrect, available, unavailable (int)*/
@@ -31,10 +35,11 @@ public class GenericAnswerDetails extends SugarRecord {
     public boolean bookmarked;
 
     public GenericAnswerDetails() {
-
     }
 
-    public GenericAnswerDetails(int question_number, int category, int status, boolean hint_displayed, boolean answer_displayed, int number_incorrect) {
+    public GenericAnswerDetails(int question_number, int category, int status,
+                                boolean hint_displayed, boolean answer_displayed,
+                                int number_incorrect) {
         this.question_number = question_number;
         this.category = category;
         this.status = status;
@@ -47,86 +52,61 @@ public class GenericAnswerDetails extends SugarRecord {
     public String toString() {
         return "GenericAnswerDetails{" +
                 "question_number=" + question_number +
-                ", status='" + status + '\'' +
+                ", status=" + status +
                 ", hint_displayed=" + hint_displayed +
                 ", answer_displayed=" + answer_displayed +
                 ", number_incorrect=" + number_incorrect +
                 '}';
     }
 
+    // ── Public API (same signatures as before) ────────────────────────────────
+
     public static void initializeDatabase(Activity activity) {
         new LoadDatabaseInBackgroundThread(activity).execute();
     }
 
     public static ArrayList<GenericAnswerDetails> listAll(int category) {
-        return (ArrayList<GenericAnswerDetails>) Select.from(GenericAnswerDetails.class)
-                .where(Condition.prop("category").eq(category))
-                .list();
+        return new ArrayList<>(AppDatabase.db.answerDetailsDao().getByCategory(category));
     }
 
     public static void incrementNumberOfIncorrect(int question_number, int category) {
-        GenericAnswerDetails genericAnswerDetail = Select.from(GenericAnswerDetails.class).where(Condition.prop(NamingHelper.toSQLNameDefault("category")).eq(category)).where(Condition.prop(NamingHelper.toSQLNameDefault("questionNumber")).eq(question_number)).first();
-        genericAnswerDetail.number_incorrect++;
-        genericAnswerDetail.save();
+        GenericAnswerDetailsDao dao = AppDatabase.db.answerDetailsDao();
+        GenericAnswerDetails d = dao.getByQuestionAndCategory(question_number, category);
+        if (d != null) {
+            d.number_incorrect++;
+            dao.update(d);
+        }
     }
 
     public static GenericAnswerDetails getAnswerDetail(int question_number, int category) {
-        GenericAnswerDetails genericAnswerDetail = Select.from(GenericAnswerDetails.class)
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("category")).eq(category))
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("question_number")).eq(question_number))
-                .first();
-        return genericAnswerDetail;
+        return AppDatabase.db.answerDetailsDao().getByQuestionAndCategory(question_number, category);
     }
 
     public static int getStatus(int question_number, int category) {
-        GenericAnswerDetails genericAnswerDetail = Select.from(GenericAnswerDetails.class)
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("category")).eq(category))
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("question_number")).eq(question_number))
-                .first();
-        return genericAnswerDetail.status;
+        GenericAnswerDetails d = AppDatabase.db.answerDetailsDao()
+                .getByQuestionAndCategory(question_number, category);
+        return d != null ? d.status : Constants.UNAVAILABLE;
     }
 
     public static void updateStatus(int question_number, int category, int status) {
-        GenericAnswerDetails genericAnswerDetail = Select.from(GenericAnswerDetails.class)
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("category")).eq(category))
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("question_number")).eq(question_number))
-                .first();
-        genericAnswerDetail.status = status;
-
-        if (status == Constants.CORRECT)
-            genericAnswerDetail.answer_displayed = true;
-        genericAnswerDetail.save();
+        GenericAnswerDetailsDao dao = AppDatabase.db.answerDetailsDao();
+        GenericAnswerDetails d = dao.getByQuestionAndCategory(question_number, category);
+        if (d != null) {
+            d.status = status;
+            if (status == Constants.CORRECT) d.answer_displayed = true;
+            dao.update(d);
+        }
     }
 
-    /*
-    *Not sure if this is correct. Check logcat to see the SQL command that is returned.
-     */
     public static GenericAnswerDetails getLastUnlockedQuestion(int category) {
-        ArrayList<GenericAnswerDetails> answerDetails = (ArrayList<GenericAnswerDetails>) Select.from(GenericAnswerDetails.class)
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("category"))
-                        .eq(category))
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("status")).eq(Constants.CORRECT))
-                .whereOr(Condition.prop(NamingHelper.toSQLNameDefault("status")).eq(Constants.AVAILABLE))
-                .list();
-        return answerDetails.get(answerDetails.size() - 1);
-
-        /*
-        *If you cant figure out how to do this, just create and arraylist using this -
-         *Select.from(GenericAnswerDetails.class).list()
-          * and then traverse manually to find whichever condition we want.
-         */
+        List<GenericAnswerDetails> list = AppDatabase.db.answerDetailsDao()
+                .getByStatusOrStatus(category, Constants.CORRECT, Constants.AVAILABLE);
+        return list.isEmpty() ? null : list.get(list.size() - 1);
     }
 
-    /**
-     * This method returns the question which is locked and has the least no
-     */
     public static GenericAnswerDetails getFirstLocked(int category) {
-        GenericAnswerDetails genericAnswerDetail = Select.from(GenericAnswerDetails.class)
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("category")).eq(category))
-                .where(Condition.prop(NamingHelper.toSQLNameDefault("status")).eq(Constants.UNAVAILABLE))
-                .first(); // Note this may need to change if question numbers are not ascending
-        //Log.i("First Locked position", " " + genericAnswerDetail.question_number);
-        return genericAnswerDetail;
+        return AppDatabase.db.answerDetailsDao()
+                .getFirstByStatusAndCategory(category, Constants.UNAVAILABLE);
     }
 
     /**
@@ -134,22 +114,22 @@ public class GenericAnswerDetails extends SugarRecord {
      */
     public static int unlockNextQuestion(int category) {
         GenericAnswerDetails nextQuestion = getFirstLocked(category);
-        if (nextQuestion != null) {
-            if (nextQuestion.status == Constants.UNAVAILABLE) {
-                nextQuestion.status = Constants.AVAILABLE;
-                nextQuestion.save();
-            }
+        if (nextQuestion != null && nextQuestion.status == Constants.UNAVAILABLE) {
+            nextQuestion.status = Constants.AVAILABLE;
+            AppDatabase.db.answerDetailsDao().update(nextQuestion);
             return nextQuestion.question_number;
-        } else
-            return -2;
+        }
+        return -2;
     }
 
     public static void printAll() {
-        List<GenericAnswerDetails> genericAnswerDetails = Select.from(GenericAnswerDetails.class).list();
-        for (GenericAnswerDetails g : genericAnswerDetails) {
+        List<GenericAnswerDetails> list = AppDatabase.db.answerDetailsDao().getAll();
+        for (GenericAnswerDetails g : list) {
             Log.d("PRINTDB", g.toString());
         }
     }
+
+    // ── Background initialization ─────────────────────────────────────────────
 
     private static class LoadDatabaseInBackgroundThread extends AsyncTask<Void, Void, Void> {
 
@@ -168,62 +148,25 @@ public class GenericAnswerDetails extends SugarRecord {
 
         @Override
         protected Void doInBackground(Void... params) {
-            /*
-         *Initialize database with total number of answered questions with default value as that in the JSON question
-         * question_id : from JSON File
-         * status : UNAVAILABLE
-         * hint : false
-         * answer : false
-         * number_incorrect : 0
-         */
-            GenericAnswerDetails.deleteAll(GenericAnswerDetails.class);
-            ArrayList<GenericQuestion> allQuestions = new ArrayList<>();
+            GenericAnswerDetailsDao dao = AppDatabase.db.answerDetailsDao();
+            dao.deleteAll();
 
-            allQuestions.addAll(JSONUtils.getQuestionsFromJSONString(activity, Constants.GAME_TYPE_LOGIC));
-            for (int i = 0; i < allQuestions.size(); i++) {
-                int question_number = allQuestions.get(i).question_number;
-                int category = allQuestions.get(i).category;
-                GenericAnswerDetails genericAnswerDetails;
-
-                if (i < 3)
-                genericAnswerDetails = new GenericAnswerDetails(question_number, category, Constants.AVAILABLE, false, false, 0);
-                else
-                    genericAnswerDetails = new GenericAnswerDetails(question_number, category, Constants.UNAVAILABLE, false, false, 0);
-                genericAnswerDetails.save();
-            }
-
-            allQuestions = new ArrayList<>();
-
-            allQuestions.addAll(JSONUtils.getQuestionsFromJSONString(activity, Constants.GAME_TYPE_RIDDLE));
-
-            for (int i = 0; i < allQuestions.size(); i++) {
-                int question_number = allQuestions.get(i).question_number;
-                int category = allQuestions.get(i).category;
-                GenericAnswerDetails genericAnswerDetails;
-
-                if (i < 3)
-                genericAnswerDetails = new GenericAnswerDetails(question_number, category, Constants.AVAILABLE, false, false, 0);
-                else
-                    genericAnswerDetails = new GenericAnswerDetails(question_number, category, Constants.UNAVAILABLE, false, false, 0);
-                genericAnswerDetails.save();
-            }
-
-            allQuestions = new ArrayList<>();
-
-            allQuestions.addAll(JSONUtils.getQuestionsFromJSONString(activity, Constants.GAME_TYPE_SEQUENCES));
-
-            for (int i = 0; i < allQuestions.size(); i++) {
-                int question_number = allQuestions.get(i).question_number;
-                int category = allQuestions.get(i).category;
-                GenericAnswerDetails genericAnswerDetails;
-
-                if (i < 3)
-                genericAnswerDetails = new GenericAnswerDetails(question_number, category, Constants.AVAILABLE, false, false, 0);
-                else
-                    genericAnswerDetails = new GenericAnswerDetails(question_number, category, Constants.UNAVAILABLE, false, false, 0);
-                genericAnswerDetails.save();
-            }
+            insertForCategory(dao, activity, Constants.GAME_TYPE_LOGIC);
+            insertForCategory(dao, activity, Constants.GAME_TYPE_RIDDLE);
+            insertForCategory(dao, activity, Constants.GAME_TYPE_SEQUENCES);
             return null;
+        }
+
+        private void insertForCategory(GenericAnswerDetailsDao dao, Context ctx, int gameType) {
+            ArrayList<GenericQuestion> questions = JSONUtils.getQuestionsFromJSONString(ctx, gameType);
+            List<GenericAnswerDetails> toInsert = new ArrayList<>();
+            for (int i = 0; i < questions.size(); i++) {
+                int qNum = questions.get(i).question_number;
+                int cat  = questions.get(i).category;
+                int status = (i < 3) ? Constants.AVAILABLE : Constants.UNAVAILABLE;
+                toInsert.add(new GenericAnswerDetails(qNum, cat, status, false, false, 0));
+            }
+            dao.insertAll(toInsert);
         }
 
         @Override
