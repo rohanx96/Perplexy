@@ -1,9 +1,7 @@
 package com.contextgenesis.perplexy.elements;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.util.Log;
 
 import androidx.room.Entity;
@@ -131,33 +129,41 @@ public class GenericAnswerDetails {
 
     // ── Background initialization ─────────────────────────────────────────────
 
-    private static class LoadDatabaseInBackgroundThread extends AsyncTask<Void, Void, Void> {
+    private static class LoadDatabaseInBackgroundThread {
+        private final Activity activity;
+        private final java.util.concurrent.ExecutorService executor =
+                java.util.concurrent.Executors.newSingleThreadExecutor();
+        private final android.os.Handler mainHandler =
+                new android.os.Handler(android.os.Looper.getMainLooper());
 
-        Activity activity;
-
-        public LoadDatabaseInBackgroundThread(Activity activity) {
+        LoadDatabaseInBackgroundThread(Activity activity) {
             this.activity = activity;
         }
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
+        void execute() {
+            // runs on calling (main) thread — same as onPreExecute
             activity.finish();
             activity.startActivity(new Intent(activity, LoadingActivity.class));
+
+            executor.execute(() -> {
+                // runs on background thread — same as doInBackground
+                GenericAnswerDetailsDao dao = AppDatabase.db.answerDetailsDao();
+                dao.deleteAll();
+                insertForCategory(dao, activity, Constants.GAME_TYPE_LOGIC);
+                insertForCategory(dao, activity, Constants.GAME_TYPE_RIDDLE);
+                insertForCategory(dao, activity, Constants.GAME_TYPE_SEQUENCES);
+
+                // back on main thread — same as onPostExecute
+                mainHandler.post(() -> {
+                    if (LoadingActivity.thisActivity != null)
+                        LoadingActivity.thisActivity.finish();
+                    activity.startActivity(new Intent(activity, MainActivity.class));
+                    activity.startActivity(new Intent(activity, HelpActivity.class));
+                });
+            });
         }
 
-        @Override
-        protected Void doInBackground(Void... params) {
-            GenericAnswerDetailsDao dao = AppDatabase.db.answerDetailsDao();
-            dao.deleteAll();
-
-            insertForCategory(dao, activity, Constants.GAME_TYPE_LOGIC);
-            insertForCategory(dao, activity, Constants.GAME_TYPE_RIDDLE);
-            insertForCategory(dao, activity, Constants.GAME_TYPE_SEQUENCES);
-            return null;
-        }
-
-        private void insertForCategory(GenericAnswerDetailsDao dao, Context ctx, int gameType) {
+        private void insertForCategory(GenericAnswerDetailsDao dao, android.content.Context ctx, int gameType) {
             ArrayList<GenericQuestion> questions = JSONUtils.getQuestionsFromJSONString(ctx, gameType);
             List<GenericAnswerDetails> toInsert = new ArrayList<>();
             for (int i = 0; i < questions.size(); i++) {
@@ -167,15 +173,6 @@ public class GenericAnswerDetails {
                 toInsert.add(new GenericAnswerDetails(qNum, cat, status, false, false, 0));
             }
             dao.insertAll(toInsert);
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            if (LoadingActivity.thisActivity != null)
-                LoadingActivity.thisActivity.finish();
-            activity.startActivity(new Intent(activity, MainActivity.class));
-            activity.startActivity(new Intent(activity, HelpActivity.class));
         }
     }
 }
