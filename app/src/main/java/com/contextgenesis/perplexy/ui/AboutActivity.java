@@ -46,7 +46,7 @@ public class AboutActivity extends Activity {
     }
 
     public void setButterknife() {
-        openWeb("https://github.com/JakeWharton/butterknife");
+        openWeb("https://developer.android.com/topic/libraries/view-binding");
     }
 
     public void setDialog() {
@@ -62,7 +62,7 @@ public class AboutActivity extends Activity {
     }
 
     public void setSugar() {
-        openWeb("https://github.com/satyan/sugar/");
+        openWeb("https://developer.android.com/training/data-storage/room");
     }
 
     public void setSwitchBtn() {
