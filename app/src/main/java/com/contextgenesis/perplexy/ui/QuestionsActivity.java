@@ -27,14 +27,11 @@ import android.view.animation.ScaleAnimation;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import com.contextgenesis.perplexy.databinding.ActivityQuestionsBinding;
 import com.contextgenesis.perplexy.ui.dialogs.BankDialog;
 import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.utils.ShareQuestion;
-import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.InterstitialAd;
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.callbacks.QuestionsCallback;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
@@ -46,16 +43,24 @@ import com.contextgenesis.perplexy.utils.Coins;
 import com.contextgenesis.perplexy.utils.Constants;
 import com.contextgenesis.perplexy.utils.JSONUtils;
 import com.contextgenesis.perplexy.utils.SoundManager;
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.reward.RewardItem;
-import com.google.android.gms.ads.reward.RewardedVideoAd;
-import com.google.android.gms.ads.reward.RewardedVideoAdListener;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by rose on 6/3/16.
  */
 
-public class QuestionsActivity extends AppCompatActivity implements QuestionsCallback, RewardedVideoAdListener {
+public class QuestionsActivity extends AppCompatActivity implements QuestionsCallback {
 
     private ScreenSlidePagerAdapter pagerAdapter;
     private final int NO_OF_COLORS = 7;
@@ -63,13 +68,10 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     private int mCurrentPage;
     private boolean isCharacterDialogOpen = false;
     private boolean isLocked = false;
-    //InterstitialAd mVideoAd;
-
-    RewardedVideoAd mVideoAd;
+    private RewardedAd mRewardedAd;
     private boolean mIsRewardedVideoLoading;
     private final Object mLock = new Object();
-
-    InterstitialAd mInterstitialAd;
+    private InterstitialAd mInterstitialAd;
     SharedPreferences pref;
 
     int CATEGORY = -1;
@@ -417,16 +419,18 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     @Override
     public void showAd(boolean isVideoAd) {
         if (isVideoAd) {
-            if (mVideoAd.isLoaded()) {
-                mVideoAd.show();
+            if (mRewardedAd != null) {
+                mRewardedAd.show(this, rewardItem -> {
+                    Toast.makeText(this, "You earned 150 coins", Toast.LENGTH_SHORT).show();
+                    afterAdWatched();
+                });
             } else {
-                Snackbar.make(binding.questionsActivityContainer, "Unable to load ad. Please try again later", Snackbar.LENGTH_LONG).show();
-                requestNewVideoAd();
+                Snackbar.make(binding.questionsActivityContainer,
+                        "Unable to load ad. Please try again later", Snackbar.LENGTH_LONG).show();
             }
-        } else if (mInterstitialAd.isLoaded()) {
-            mInterstitialAd.show();
-        } else
-            requestNewInterstitial(false);
+        } else if (mInterstitialAd != null) {
+            mInterstitialAd.show(this);
+        }
     }
 
     private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
@@ -648,66 +652,78 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     }
 
     private void setupAd() {
-        /*mVideoAd = new InterstitialAd(this);
-        mVideoAd.setAdUnitId(getString(R.string.video_ad_id));
-        mVideoAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdClosed() {
-                afterAdWatched();
-                requestNewInterstitial(true);
-            }
-        });*/
-        mVideoAd = MobileAds.getRewardedVideoAdInstance(this);
-        mVideoAd.setRewardedVideoAdListener(this);
+        List<String> testDeviceIds = Arrays.asList(
+                "C40E23EA84B9F2235B07CE0531A253AB",
+                "CDCEF54FDF7F3A4DEC120209B12D78C6",
+                "D40CA2BD5C7E81CF7B1F9C31DFE05BE6",
+                "8A2C1665B62A2ED7A01F6628CC2094A4",
+                "BE64FAA03F9F6E8E1EAD78815EFEF7C8",
+                "9975DC9A27F0D1B042C31A65D01EEB04",
+                "08BEF4E2E5265F493ABAEC3DDD496048"
+        );
+        MobileAds.setRequestConfiguration(
+                new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build());
         requestNewVideoAd();
-        mInterstitialAd = new InterstitialAd(this);
-        mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_id));
-        mInterstitialAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdClosed() {
-                pref.edit().putInt(Constants.PREF_SHOW_AD, 0).apply();
-                super.onAdClosed();
-            }
-        });
-        requestNewInterstitial(false);
+        requestNewInterstitial();
     }
 
-    private void requestNewInterstitial(boolean isVideoAd) {
-        AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice("C40E23EA84B9F2235B07CE0531A253AB") //Rohan
-                .addTestDevice("CDCEF54FDF7F3A4DEC120209B12D78C6") // Rishab
-                .addTestDevice("D40CA2BD5C7E81CF7B1F9C31DFE05BE6")  // Dhruv
-                .addTestDevice("8A2C1665B62A2ED7A01F6628CC2094A4")  // Dhruv N
-                .addTestDevice("BE64FAA03F9F6E8E1EAD78815EFEF7C8")  // op5
-                .addTestDevice("9975DC9A27F0D1B042C31A65D01EEB04") // Gaurav
-                .addTestDevice("mydevice")
-                .build();
-        if (isVideoAd) {
-            //    mVideoAd.loadAd(adRequest);
-            requestNewVideoAd();
-        } else
-            mInterstitialAd.loadAd(adRequest);
+    private void requestNewInterstitial() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(this, getString(R.string.interstitial_ad_id), adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd ad) {
+                        mInterstitialAd = ad;
+                        mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                pref.edit().putInt(Constants.PREF_SHOW_AD, 0).apply();
+                                mInterstitialAd = null;
+                                requestNewInterstitial();
+                            }
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                mInterstitialAd = null;
+                            }
+                        });
+                    }
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        mInterstitialAd = null;
+                    }
+                });
     }
 
     private void requestNewVideoAd() {
         synchronized (mLock) {
-            if (!mIsRewardedVideoLoading) {
-                mIsRewardedVideoLoading = true;
-                Bundle extras = new Bundle();
-                extras.putBoolean("_noRefresh", true);
-                AdRequest adRequest = new AdRequest.Builder()
-                        .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                        .addTestDevice("C40E23EA84B9F2235B07CE0531A253AB") //Rohan
-                        .addTestDevice("CDCEF54FDF7F3A4DEC120209B12D78C6") // Rishab
-                        .addTestDevice("D40CA2BD5C7E81CF7B1F9C31DFE05BE6")  // Dhruv
-                        .addTestDevice("8A2C1665B62A2ED7A01F6628CC2094A4")  // Dhruv N
-                        .addTestDevice("BE64FAA03F9F6E8E1EAD78815EFEF7C8")  // op5
-                        .addTestDevice("9975DC9A27F0D1B042C31A65D01EEB04") // Gaurav
-                        .addTestDevice("08BEF4E2E5265F493ABAEC3DDD496048") // Sarthak
-                        .build();
-                mVideoAd.loadAd(getString(R.string.reward_video_ad_id), adRequest);
-            }
+            if (mIsRewardedVideoLoading) return;
+            mIsRewardedVideoLoading = true;
         }
+        AdRequest adRequest = new AdRequest.Builder().build();
+        RewardedAd.load(this, getString(R.string.reward_video_ad_id), adRequest,
+                new RewardedAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull RewardedAd ad) {
+                        synchronized (mLock) { mIsRewardedVideoLoading = false; }
+                        mRewardedAd = ad;
+                        mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                mRewardedAd = null;
+                                requestNewVideoAd();
+                            }
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                mRewardedAd = null;
+                            }
+                        });
+                    }
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        synchronized (mLock) { mIsRewardedVideoLoading = false; }
+                        mRewardedAd = null;
+                    }
+                });
     }
 
     public void afterAdWatched() {
@@ -716,48 +732,4 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
         binding.questionsActivityCoinText.setText(String.format("%d", Coins.getCurrentCoins(this)));
     }
 
-    @Override
-    public void onRewarded(RewardItem reward) {
-        Toast.makeText(this, "You earned 150 coins", Toast.LENGTH_SHORT).show();
-        Coins.addCoinsFromAd(this);
-        SoundManager.playCorrectAnswerSound(this);
-        binding.questionsActivityCoinText.setText(String.format("%d", Coins.getCurrentCoins(this)));
-    }
-
-    @Override
-    public void onRewardedVideoAdLeftApplication() {
-        //Toast.makeText(this, "onRewardedVideoAdLeftApplication",Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoAdClosed() {
-        //Toast.makeText(this, "onRewardedVideoAdClosed", Toast.LENGTH_SHORT).show();
-        requestNewVideoAd();
-    }
-
-    @Override
-    public void onRewardedVideoAdFailedToLoad(int errorCode) {
-        synchronized (mLock) {
-            mIsRewardedVideoLoading = false;
-        }
-        //Toast.makeText(this, "onRewardedVideoAdFailedToLoad", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoAdLoaded() {
-        synchronized (mLock) {
-            mIsRewardedVideoLoading = false;
-        }
-        //Toast.makeText(this, "onRewardedVideoAdLoaded", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoAdOpened() {
-        //Toast.makeText(this, "onRewardedVideoAdOpened", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoStarted() {
-        //Toast.makeText(this, "onRewardedVideoStarted", Toast.LENGTH_SHORT).show();
-    }
 }
