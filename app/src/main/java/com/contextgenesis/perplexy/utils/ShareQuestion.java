@@ -1,17 +1,10 @@
 package com.contextgenesis.perplexy.utils;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Environment;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
-import androidx.appcompat.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -29,63 +22,24 @@ import java.util.Date;
  */
 
 public class ShareQuestion {
-    public static final int REQUEST_WRITE_STORAGE = 112;
     static Bitmap bitmap;
 
     public static void shareImageWhatsapp(final Activity activity) {
-        if (ContextCompat.checkSelfPermission(activity,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(activity,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(activity);
-                dialogBuilder.setMessage("The write external storage permission is required to save the screenshot of the question. " +
-                        "Kindly grant the permission when requested to use the share functionality")
-                        .setPositiveButton("Got it", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                                ActivityCompat.requestPermissions(activity,
-                                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                                        REQUEST_WRITE_STORAGE);
-                            }
-                        });
-                dialogBuilder.show();
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(activity,
-                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        REQUEST_WRITE_STORAGE);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
-        } else {
-            Toast.makeText(activity, "Preparing for Share", Toast.LENGTH_LONG).show();
-            shareImage(activity);
-        }
+        Toast.makeText(activity, "Preparing for Share", Toast.LENGTH_LONG).show();
+        shareImage(activity);
     }
 
     private static File takeScreenshot(Activity activity) {
         Date now = new Date();
         android.text.format.DateFormat.format("yyyy-MM-dd_hh:mm:ss", now);
-        String mPath = Environment.getExternalStorageDirectory().toString() + "/" + now + ".jpg";
+        String mPath = activity.getExternalCacheDir() + "/" + now + ".jpg";
 
         // create bitmap screen capture
         View v1 = activity.getWindow().getDecorView().getRootView();
         v1.setDrawingCacheEnabled(true);
         bitmap = Bitmap.createBitmap(v1.getDrawingCache());
         v1.setDrawingCacheEnabled(false);
-        File imageFile = new File(Environment.getExternalStorageDirectory(), "/" + now + ".jpg");
+        File imageFile = new File(activity.getExternalCacheDir(), now + ".jpg");
         if (!imageFile.exists()) {
             Log.i("Sharing", "creating file");
             try {

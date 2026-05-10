@@ -26,9 +26,9 @@ public class JSONUtils {
     private static com.contextgenesis.perplexy.utils.QuestionArray cachedQuestionArray_RIDDLES = null;
     private static com.contextgenesis.perplexy.utils.QuestionArray cachedQuestionArray_SEQUENCES = null;
 
-    public boolean writeToFile(String fileName, String fileContent) {
+    public boolean writeToFile(Context context, String fileName, String fileContent) {
         try {
-            File file = new File(BasePath.getBasePath(), fileName);
+            File file = new File(BasePath.getBasePath(context), fileName);
 
             // If file does not exists, then create it
             if (!file.exists()) {
@@ -49,7 +49,7 @@ public class JSONUtils {
         }
     }
 
-    public String readFromFile(String fileName) {
+    public String readFromFile(Context context, String fileName) {
 
         BufferedReader br = null;
         String response = null;
@@ -57,7 +57,7 @@ public class JSONUtils {
         try {
             StringBuffer output = new StringBuffer();
 
-            File filePath = new File(BasePath.getBasePath(), fileName);
+            File filePath = new File(BasePath.getBasePath(context), fileName);
 
             br = new BufferedReader(new FileReader(filePath));
             String line = "";
