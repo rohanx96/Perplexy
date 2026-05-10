@@ -33,7 +33,6 @@ import com.contextgenesis.perplexy.ui.dialogs.BankDialog;
 import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.utils.ShareQuestion;
 import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.ads.mediation.unity.UnityAdapter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
@@ -699,7 +698,6 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                 extras.putBoolean("_noRefresh", true);
                 AdRequest adRequest = new AdRequest.Builder()
                         .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                        .addNetworkExtrasBundle(UnityAdapter.class, extras)
                         .addTestDevice("C40E23EA84B9F2235B07CE0531A253AB") //Rohan
                         .addTestDevice("CDCEF54FDF7F3A4DEC120209B12D78C6") // Rishab
                         .addTestDevice("D40CA2BD5C7E81CF7B1F9C31DFE05BE6")  // Dhruv

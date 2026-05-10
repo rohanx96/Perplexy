@@ -30,8 +30,6 @@ import com.contextgenesis.perplexy.ui.NumberLineActivity;
 import com.contextgenesis.perplexy.utils.Analytics;
 import com.contextgenesis.perplexy.utils.Constants;
 import com.contextgenesis.perplexy.utils.SoundManager;
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.mikhaellopez.circularprogressbar.CircularProgressBar;
 
 import java.util.ArrayList;
@@ -208,9 +206,10 @@ public class FrontPageFragment extends Fragment {
         /*Implement switch case here once we set up code and questions*/
         questionsActivity.putExtra(Constants.BUNDLE_QUESTION_CATEGORY, selectedGameType);
         startActivity(questionsActivity);
-        PerplexyApplication application = (PerplexyApplication) getActivity().getApplication();
-        application.getDefaultTracker().send(new HitBuilders.EventBuilder()
-                .setCategory(Analytics.CATEGORY_UI).setAction(Analytics.ACTION_PLAY_CATEGORY).setValue(selectedGameType).build());
+        android.os.Bundle params = new android.os.Bundle();
+        params.putInt("game_type", selectedGameType);
+        ((com.contextgenesis.perplexy.PerplexyApplication) getActivity().getApplication())
+                .getFirebaseAnalytics().logEvent(Analytics.ACTION_PLAY_CATEGORY, params);
         /* This will stop the falling drawables animation when the activity has been left. Improves performance */
         ((MainActivity) getActivity()).getFallingDrawables().stopAnimation();
         SoundManager.playButtonClickSound(getActivity());
