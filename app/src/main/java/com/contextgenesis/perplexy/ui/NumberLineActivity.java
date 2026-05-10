@@ -17,9 +17,6 @@ import android.widget.TextView;
 
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.adapters.NumberLineAdapter;
-import com.contextgenesis.perplexy.billingUtils.IabHelper;
-import com.contextgenesis.perplexy.billingUtils.IabResult;
-import com.contextgenesis.perplexy.billingUtils.Inventory;
 import com.contextgenesis.perplexy.databinding.ActivityNumberLineBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.dialogs.BankDialog;
@@ -38,8 +35,6 @@ public class NumberLineActivity extends AppCompatActivity {
     int CATEGORY;
 
     private ActivityNumberLineBinding binding;
-
-    IabHelper mHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
