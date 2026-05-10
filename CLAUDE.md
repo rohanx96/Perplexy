@@ -68,7 +68,10 @@ Perplexy is an Android educational quiz/puzzle game with three game modes: Logic
 
 ## Notable Codebase Characteristics
 
-- Gradle still uses deprecated `compile` scope (not `implementation`) — don't change without testing
-- Uses Android Support Library (not AndroidX) — migration not done
-- Android Gradle Plugin 2.0.0 — build toolchain is old; avoid upgrading without thorough testing
-- Test classes use an old package name (`com.rohanx96.admobproto`) and have no meaningful coverage
+- **ViewBinding** is used across all Activities, Fragments, and Dialogs — no ButterKnife
+- **Room** (v2.6.1) is used for local persistence via `AppDatabase` singleton; `allowMainThreadQueries()` is set — async migration is a future TODO
+- **Gson** is used for JSON parsing of question assets
+- **Firebase Analytics** replaces the old Google Analytics SDK
+- **Play Billing Library v7** is wired up in `BankDialog` but IAP call sites remain commented out
+- `minifyEnabled false` in release builds — ProGuard rules are present if it's ever enabled
+- Test coverage is minimal — placeholder tests only
