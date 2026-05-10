@@ -1,7 +1,6 @@
 package com.contextgenesis.perplexy.utils;
 
-import com.bluelinelabs.logansquare.annotation.JsonField;
-import com.bluelinelabs.logansquare.annotation.JsonObject;
+import com.google.gson.annotations.SerializedName;
 import com.contextgenesis.perplexy.elements.GenericQuestion;
 
 import java.util.List;
@@ -10,10 +9,9 @@ import java.util.List;
  * Created by rish on 5/4/16.
  */
 
-@JsonObject
 public class QuestionArray {
 
-    @JsonField(name = "questions")
+    @SerializedName("questions")
     public List<GenericQuestion> questionsArray;
 
 }

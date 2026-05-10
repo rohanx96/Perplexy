@@ -3,7 +3,7 @@ package com.contextgenesis.perplexy.utils;
 import android.content.Context;
 import android.util.Log;
 
-import com.bluelinelabs.logansquare.LoganSquare;
+import com.google.gson.Gson;
 import com.contextgenesis.perplexy.elements.GenericQuestion;
 
 import java.io.BufferedReader;
@@ -26,9 +26,9 @@ public class JSONUtils {
     private static com.contextgenesis.perplexy.utils.QuestionArray cachedQuestionArray_RIDDLES = null;
     private static com.contextgenesis.perplexy.utils.QuestionArray cachedQuestionArray_SEQUENCES = null;
 
-    public boolean writeToFile(String fileName, String fileContent) {
+    public boolean writeToFile(Context context, String fileName, String fileContent) {
         try {
-            File file = new File(BasePath.getBasePath(), fileName);
+            File file = new File(BasePath.getBasePath(context), fileName);
 
             // If file does not exists, then create it
             if (!file.exists()) {
@@ -49,7 +49,7 @@ public class JSONUtils {
         }
     }
 
-    public String readFromFile(String fileName) {
+    public String readFromFile(Context context, String fileName) {
 
         BufferedReader br = null;
         String response = null;
@@ -57,7 +57,7 @@ public class JSONUtils {
         try {
             StringBuffer output = new StringBuffer();
 
-            File filePath = new File(BasePath.getBasePath(), fileName);
+            File filePath = new File(BasePath.getBasePath(context), fileName);
 
             br = new BufferedReader(new FileReader(filePath));
             String line = "";
@@ -83,7 +83,7 @@ public class JSONUtils {
             is.close();
             String json = new String(buffer, "UTF-8");
 
-            questionArray = LoganSquare.parse(json, com.contextgenesis.perplexy.utils.QuestionArray.class);
+            questionArray = new Gson().fromJson(json, com.contextgenesis.perplexy.utils.QuestionArray.class);
         } catch (IOException e) {
             e.printStackTrace();
         }

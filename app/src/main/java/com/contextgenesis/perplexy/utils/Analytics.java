@@ -1,13 +1,10 @@
 package com.contextgenesis.perplexy.utils;
 
 import android.app.Activity;
+import android.os.Bundle;
 
 import com.contextgenesis.perplexy.PerplexyApplication;
-import com.google.android.gms.analytics.HitBuilders;
-
-/**
- * Created by rose on 25/4/16.
- */
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class Analytics {
     public static final String CATEGORY_UI = "UI";
@@ -21,39 +18,45 @@ public class Analytics {
     public static final String ACTION_WATCH_AD = "Click on Watch Ad";
     public static final String ACTION_PLAY_CATEGORY = "Play category";
 
-    public static void sendWatchAd(Activity mActivity,long coins){
-        PerplexyApplication application = (PerplexyApplication) mActivity.getApplication();
-        application.getDefaultTracker().send(new HitBuilders.EventBuilder()
-                .setCategory(Analytics.CATEGORY_ADS).setAction(Analytics.ACTION_WATCH_AD).setValue(coins).build());
+    private static FirebaseAnalytics getTracker(Activity activity) {
+        return ((PerplexyApplication) activity.getApplication()).getFirebaseAnalytics();
     }
 
-    public static void sendShowHint(Activity mActivity, int category, int questionNo){
-        PerplexyApplication application = (PerplexyApplication) mActivity.getApplication();
-        application.getDefaultTracker().send(new HitBuilders.EventBuilder()
-                .setCategory(Analytics.CATEGORY_QUESTION).setAction(Analytics.ACTION_SHOW_HINT)
-                .setLabel("Category:" + category)
-                .setValue(questionNo).build());
+    public static void sendWatchAd(Activity activity, long coins) {
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, CATEGORY_ADS);
+        params.putLong("coins", coins);
+        getTracker(activity).logEvent(ACTION_WATCH_AD, params);
     }
 
-    public static void sendShowSolution(Activity mActivity, int category, int questionNo){
-        PerplexyApplication application = (PerplexyApplication) mActivity.getApplication();
-        application.getDefaultTracker().send(new HitBuilders.EventBuilder()
-                .setCategory(Analytics.CATEGORY_QUESTION).setAction(Analytics.ACTION_SHOW_SOLUTION)
-                .setLabel("Category:" + category)
-                .setValue(questionNo).build());
+    public static void sendShowHint(Activity activity, int category, int questionNo) {
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, CATEGORY_QUESTION);
+        params.putInt("category", category);
+        params.putInt("question_no", questionNo);
+        getTracker(activity).logEvent("show_hint", params);
     }
 
-    public static void sendUnlockQuestion(Activity mActivity, int category, int questionNo){
-        PerplexyApplication application = (PerplexyApplication) mActivity.getApplication();
-        application.getDefaultTracker().send(new HitBuilders.EventBuilder()
-                .setCategory(Analytics.CATEGORY_QUESTION).setAction(Analytics.ACTION_UNLOCK_QUESTION)
-                .setLabel("Category:" + category)
-                .setValue(questionNo).build());
+    public static void sendShowSolution(Activity activity, int category, int questionNo) {
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, CATEGORY_QUESTION);
+        params.putInt("category", category);
+        params.putInt("question_no", questionNo);
+        getTracker(activity).logEvent("show_solution", params);
     }
 
-    public static void sendNoCoins(Activity mActivity, long coins){
-        PerplexyApplication application = (PerplexyApplication) mActivity.getApplication();
-        application.getDefaultTracker().send(new HitBuilders.EventBuilder()
-                .setCategory(Analytics.CATEGORY_COINS).setAction(Analytics.ACTION_NO_COINS).setValue(coins).build());
+    public static void sendUnlockQuestion(Activity activity, int category, int questionNo) {
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, CATEGORY_QUESTION);
+        params.putInt("category", category);
+        params.putInt("question_no", questionNo);
+        getTracker(activity).logEvent("unlock_question", params);
+    }
+
+    public static void sendNoCoins(Activity activity, long coins) {
+        Bundle params = new Bundle();
+        params.putString(FirebaseAnalytics.Param.CONTENT_TYPE, CATEGORY_COINS);
+        params.putLong("coins", coins);
+        getTracker(activity).logEvent("no_coins", params);
     }
 }

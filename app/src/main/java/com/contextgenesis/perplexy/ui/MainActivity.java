@@ -5,20 +5,20 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 import android.util.Log;
 import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.orhanobut.dialogplus.DialogPlus;
-import com.orhanobut.dialogplus.DialogPlusBuilder;
-import com.orhanobut.dialogplus.ViewHolder;
+import android.view.LayoutInflater;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import androidx.appcompat.app.AlertDialog;
+import com.contextgenesis.perplexy.databinding.ActivityMainBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.fragments.FrontPageFragment;
 import com.contextgenesis.perplexy.ui.fragments.SettingsFragment;
@@ -26,37 +26,30 @@ import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.ui.fragments.StatisticsFragment;
 import com.contextgenesis.perplexy.utils.Constants;
-import com.viewpagerindicator.CirclePageIndicator;
-
-import butterknife.ButterKnife;
 
 public class MainActivity extends FragmentActivity {
 
     private static final int NUM_PAGES = 3;
 
     private ViewPager mPager;
-    private FrameLayout mContainer;
+    private ActivityMainBinding binding;
 
     private PagerAdapter mPagerAdapter;
 
-    CirclePageIndicator circlePageIndicator;
     FallingDrawables fallingDrawables;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         onFirstRun();
-        mContainer = (FrameLayout) findViewById(R.id.main_activity_container);
-        // Instantiate a ViewPager and a PagerAdapter.
-        mPager = (ViewPager) findViewById(R.id.questions_activity_pager);
+        mPager = binding.questionsActivityPager;
         mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        circlePageIndicator = (CirclePageIndicator) findViewById(R.id.indicator);
         mPager.setAdapter(mPagerAdapter);
-        circlePageIndicator.setViewPager(mPager);
+        binding.indicator.setViewPager(mPager);
         mPager.setCurrentItem(1, false);
-        fallingDrawables = new FallingDrawables(this, mContainer);
+        fallingDrawables = new FallingDrawables(this, binding.mainActivityContainer);
         showRateDialog();
 
     }
@@ -65,18 +58,38 @@ public class MainActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         /* Make the activity fullscreen */
-        mContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        enterImmersiveMode();
         // This is not done in OnCreate because the animation is stopped whenever the activity is left.
         // So we need to restart the animation when activity resumes
         if (!fallingDrawables.getIsRunning()) {
             fallingDrawables.createAnimation();
             fallingDrawables.setmDrawablesInRow();
         }
+    }
+
+    private void enterImmersiveMode() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            android.view.WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.hide(android.view.WindowInsets.Type.systemBars());
+                controller.setSystemBarsBehavior(
+                        android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LOW_PROFILE
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) enterImmersiveMode();
     }
 
     @Override
@@ -144,11 +157,11 @@ public class MainActivity extends FragmentActivity {
         Log.i("show rate", " " + prefCount);
         if (prefCount != -2) {
             if (prefCount > 3) {
-                DialogPlusBuilder dialogPlus = DialogPlus.newDialog(this);
-                dialogPlus.setContentHolder(new ViewHolder(R.layout.dialog_rate_us));
-                final DialogPlus dialog = dialogPlus.create();
-                View holder = dialog.getHolderView();
-                holder.findViewById(R.id.rate_us_confirm).setOnClickListener(new View.OnClickListener() {
+                View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_rate_us, null);
+                final AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                        .setView(dialogView)
+                        .create();
+                dialogView.findViewById(R.id.rate_us_confirm).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Uri uri = Uri.parse("market://details?id=" + getPackageName());
@@ -162,14 +175,14 @@ public class MainActivity extends FragmentActivity {
                         dialog.dismiss();
                     }
                 });
-                holder.findViewById(R.id.rate_us_remind_later).setOnClickListener(new View.OnClickListener() {
+                dialogView.findViewById(R.id.rate_us_remind_later).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         prefs.edit().putInt(Constants.PREF_SHOW_RATE_US, 0).apply();
                         dialog.dismiss();
                     }
                 });
-                holder.findViewById(R.id.rate_us_never).setOnClickListener(new View.OnClickListener() {
+                dialogView.findViewById(R.id.rate_us_never).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         prefs.edit().putInt(Constants.PREF_SHOW_RATE_US, -2).apply();

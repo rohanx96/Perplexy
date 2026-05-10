@@ -19,7 +19,7 @@
         android:paddingStart="16dp"
         android:paddingTop="16dp">
 
-        <android.support.v7.widget.CardView
+        <androidx.cardview.widget.CardView
             android:id="@+id/char_feedback_incorrect_card_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -54,9 +54,9 @@
                     android:textStyle="bold" />
 
             </RelativeLayout>
-        </android.support.v7.widget.CardView>
+        </androidx.cardview.widget.CardView>
 
-        <android.support.v7.widget.CardView
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -213,9 +213,9 @@
 
                 </RelativeLayout>
             </LinearLayout>
-        </android.support.v7.widget.CardView>
+        </androidx.cardview.widget.CardView>
 
-        <android.support.v7.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
+        <androidx.cardview.widget.CardView xmlns:card_view="http://schemas.android.com/apk/res-auto"
             android:id="@+id/char_feedback_incorrect_ad_video"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -296,7 +296,7 @@
 
             </RelativeLayout>
 
-        </android.support.v7.widget.CardView>
+        </androidx.cardview.widget.CardView>
 
         <RelativeLayout
             android:id="@+id/char_feedback_incorrect_char_q_clicked_ll_drawable"

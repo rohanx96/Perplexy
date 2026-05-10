@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/colorTransparent">
 
-    <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/question_card"
         cardCornerRadius="@dimen/card_corner_radius"
         cardElevation="@dimen/elevation_large"
@@ -142,7 +142,7 @@
 
         </RelativeLayout>
 
-    </android.support.v7.widget.CardView>
+    </androidx.cardview.widget.CardView>
 
 </FrameLayout>
 

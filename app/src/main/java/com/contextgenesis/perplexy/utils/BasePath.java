@@ -1,6 +1,6 @@
 package com.contextgenesis.perplexy.utils;
 
-import android.os.Environment;
+import android.content.Context;
 
 import java.io.File;
 
@@ -9,10 +9,8 @@ import java.io.File;
  */
 public class BasePath {
 
-    public static String getBasePath() {
-
-        File sdCard = Environment.getExternalStorageDirectory();
-        File dir = new File(sdCard.getAbsolutePath() + "/perplexy");
+    public static String getBasePath(Context context) {
+        File dir = new File(context.getFilesDir(), "perplexy");
 
         if (!dir.exists())
             dir.mkdirs();
@@ -20,16 +18,13 @@ public class BasePath {
         return dir.getAbsolutePath();
     }
 
-    public static String getBasePathShare() {
-
-        File sdCard = Environment.getExternalStorageDirectory();
-        File dir = new File(sdCard.getAbsolutePath() + "/perplexy");
+    public static String getBasePathShare(Context context) {
+        File dir = new File(context.getFilesDir(), "perplexy");
 
         if (!dir.exists())
             dir.mkdirs();
 
         return dir.getAbsolutePath();
     }
-
 
 }

@@ -9,13 +9,13 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
@@ -25,18 +25,13 @@ import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import com.contextgenesis.perplexy.databinding.ActivityQuestionsBinding;
 import com.contextgenesis.perplexy.ui.dialogs.BankDialog;
 import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.utils.ShareQuestion;
-import com.google.ads.mediation.admob.AdMobAdapter;
-import com.google.ads.mediation.unity.UnityAdapter;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.InterstitialAd;
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.callbacks.QuestionsCallback;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
@@ -48,20 +43,24 @@ import com.contextgenesis.perplexy.utils.Coins;
 import com.contextgenesis.perplexy.utils.Constants;
 import com.contextgenesis.perplexy.utils.JSONUtils;
 import com.contextgenesis.perplexy.utils.SoundManager;
+import com.google.android.gms.ads.AdError;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.MobileAds;
-import com.google.android.gms.ads.reward.RewardItem;
-import com.google.android.gms.ads.reward.RewardedVideoAd;
-import com.google.android.gms.ads.reward.RewardedVideoAdListener;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
+import com.google.android.gms.ads.RequestConfiguration;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by rose on 6/3/16.
  */
 
-public class QuestionsActivity extends AppCompatActivity implements QuestionsCallback, RewardedVideoAdListener {
+public class QuestionsActivity extends AppCompatActivity implements QuestionsCallback {
 
     private ScreenSlidePagerAdapter pagerAdapter;
     private final int NO_OF_COLORS = 7;
@@ -69,51 +68,31 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     private int mCurrentPage;
     private boolean isCharacterDialogOpen = false;
     private boolean isLocked = false;
-    //InterstitialAd mVideoAd;
-
-    RewardedVideoAd mVideoAd;
+    private RewardedAd mRewardedAd;
     private boolean mIsRewardedVideoLoading;
     private final Object mLock = new Object();
-
-    InterstitialAd mInterstitialAd;
+    private InterstitialAd mInterstitialAd;
     SharedPreferences pref;
 
     int CATEGORY = -1;
 
-    @Bind(R.id.questions_activity_correct_indicator)
-    ImageView correct_indicator;
-
-    @Bind(R.id.questions_activity_level)
-    TextView tvLevel;
-
-    @Bind(R.id.questions_activity_container)
-    ViewGroup mContainer;
-
-    @Bind(R.id.questions_activity_pager)
-    ViewPager pager;
-
-    @Bind(R.id.questions_activity_coin_text)
-    TextView coins_display;
-
-    @Bind(R.id.linearLayout)
-    RelativeLayout appbar;
+    private ActivityQuestionsBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_questions);
+        binding = ActivityQuestionsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setAllowEnterTransitionOverlap(false);
 //            getWindow().setAllowReturnTransitionOverlap(false);
         }
-        ButterKnife.bind(this);
 
         /* The page position is one less than question number. Note question number is passed to activity instead of position */
         mCurrentPage = getIntent().getIntExtra(Constants.BUNDLE_QUESTION_NUMBER, 0) - 1;
         CATEGORY = getIntent().getIntExtra(Constants.BUNDLE_QUESTION_CATEGORY, -1);
 
-        View back = findViewById(R.id.questions_activity_back);
-        back.setOnClickListener(new View.OnClickListener() {
+        binding.questionsActivityBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 //                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -124,24 +103,25 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
             }
         });
 
+        binding.questionsActivityCoinText.setOnClickListener(v -> onClick_contribute());
+        binding.questionsActivityCoinImage.setOnClickListener(v -> onClick_contribute2());
+
         if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.CORRECT) {
-            correct_indicator.setImageResource(R.drawable.tick_green);
+            binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.tick_green);
         } else if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.INCORRECT) {
-            correct_indicator.setImageResource(R.drawable.cross);
+            binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.cross);
         } else {
-            correct_indicator.setImageResource(0);
+            binding.questionsActivityCorrectIndicator.setImageResource(0);
         }
         setupCharacter();
         setupAd();
     }
 
-    @OnClick(R.id.questions_activity_coin_text)
     public void onClick_contribute() {
 //     TODO: in app include later
 //     new BankDialog(this).show();
     }
 
-    @OnClick(R.id.questions_activity_coin_image)
     public void onClick_contribute2() {
 //     TODO: in app include later
 //     new BankDialog(this).show();
@@ -152,25 +132,45 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     protected void onResume() {
         super.onResume();
         /* Make the activity fullscreen */
-        mContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        enterImmersiveMode();
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.hide();
         }
         setUpViewPager();
-        mContainer.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
-        appbar.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
+        binding.questionsActivityContainer.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
+        binding.linearLayout.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
+    }
+
+    private void enterImmersiveMode() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            android.view.WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.hide(android.view.WindowInsets.Type.systemBars());
+                controller.setSystemBarsBehavior(
+                        android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LOW_PROFILE
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) enterImmersiveMode();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        pager.clearOnPageChangeListeners();
+        binding.questionsActivityPager.clearOnPageChangeListeners();
     }
 
     @Override
@@ -185,7 +185,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                     Toast.makeText(this, "Preparing for Share", Toast.LENGTH_LONG).show();
                     ShareQuestion.shareImageWhatsapp(this);
                 } else {
-                    Snackbar.make(mContainer, "Cannot share. Please grant the write to external storage permission", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(binding.questionsActivityContainer, "Cannot share. Please grant the write to external storage permission", Snackbar.LENGTH_LONG).show();
                 }
                 return;
             }
@@ -197,17 +197,17 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
 
     private void setUpViewPager() {
         pagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        pager.setAdapter(pagerAdapter);
-        pager.setPageMargin(convertDip2Pixels(this, 16));
-        pager.setPageTransformer(true, new DepthPageTransformer());
+        binding.questionsActivityPager.setAdapter(pagerAdapter);
+        binding.questionsActivityPager.setPageMargin(convertDip2Pixels(this, 16));
+        binding.questionsActivityPager.setPageTransformer(true, new DepthPageTransformer());
 
-        pager.setCurrentItem(mCurrentPage);
-        tvLevel.setText("Level " + (mCurrentPage + 1));
+        binding.questionsActivityPager.setCurrentItem(mCurrentPage);
+        binding.questionsActivityLevel.setText("Level " + (mCurrentPage + 1));
 
         pref = getBaseContext().getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
-        coins_display.setText(pref.getLong(Constants.PREF_COINS, 0) + " ");
+        binding.questionsActivityCoinText.setText(pref.getLong(Constants.PREF_COINS, 0) + " ");
 
-        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        binding.questionsActivityPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
@@ -223,7 +223,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                 colorAnimator.setDuration(500).addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        mContainer.setBackgroundColor((int) animation.getAnimatedValue());
+                        binding.questionsActivityContainer.setBackgroundColor((int) animation.getAnimatedValue());
                     }
                 });
                 ValueAnimator colorAnimator2 = ValueAnimator.ofObject(new ArgbEvaluator(),
@@ -232,13 +232,13 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                 colorAnimator.setDuration(500).addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        appbar.setBackgroundColor((int) animation.getAnimatedValue());
+                        binding.linearLayout.setBackgroundColor((int) animation.getAnimatedValue());
                     }
                 });
                 colorAnimator.start();
                 colorAnimator2.start();
                 mCurrentPage = position;
-                tvLevel.setText("Level " + (mCurrentPage + 1));
+                binding.questionsActivityLevel.setText("Level " + (mCurrentPage + 1));
                 hideCorrectAnswerFeedback();
                 hideIncorrectAnswerFeedback();
                 if (isCharacterDialogOpen) {
@@ -253,11 +253,11 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                     CharacterUtils.setCharacterDrawable(getApplicationContext(), character, CharacterUtils.EXPRESSION_SAD_CLOSED);
 
                 if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.INCORRECT) {
-                    correct_indicator.setImageResource(R.drawable.cross);
+                    binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.cross);
                 } else if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.CORRECT) {
-                    correct_indicator.setImageResource(R.drawable.tick_green);
+                    binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.tick_green);
                 } else
-                    correct_indicator.setImageResource(0);
+                    binding.questionsActivityCorrectIndicator.setImageResource(0);
 
                 // Remove the lock image on the fragment if question was previously locked but is now unlocked
                 // finding view by id and then removing it does not work even if unique IDs are assigne to lock image view
@@ -419,16 +419,18 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     @Override
     public void showAd(boolean isVideoAd) {
         if (isVideoAd) {
-            if (mVideoAd.isLoaded()) {
-                mVideoAd.show();
+            if (mRewardedAd != null) {
+                mRewardedAd.show(this, rewardItem -> {
+                    Toast.makeText(this, "You earned 150 coins", Toast.LENGTH_SHORT).show();
+                    afterAdWatched();
+                });
             } else {
-                Snackbar.make(mContainer, "Unable to load ad. Please try again later", Snackbar.LENGTH_LONG).show();
-                requestNewVideoAd();
+                Snackbar.make(binding.questionsActivityContainer,
+                        "Unable to load ad. Please try again later", Snackbar.LENGTH_LONG).show();
             }
-        } else if (mInterstitialAd.isLoaded()) {
-            mInterstitialAd.show();
-        } else
-            requestNewInterstitial(false);
+        } else if (mInterstitialAd != null) {
+            mInterstitialAd.show(this);
+        }
     }
 
     private class ScreenSlidePagerAdapter extends FragmentStatePagerAdapter {
@@ -587,8 +589,8 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
 
     public void gotoQuestion(int questionNumber) {
         if (questionNumber == -1)
-            pager.setCurrentItem(mCurrentPage + 1, true);
-        else pager.setCurrentItem(questionNumber - 1, true);
+            binding.questionsActivityPager.setCurrentItem(mCurrentPage + 1, true);
+        else binding.questionsActivityPager.setCurrentItem(questionNumber - 1, true);
     }
 
     public static int convertDip2Pixels(Context context, int dip) {
@@ -650,117 +652,84 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     }
 
     private void setupAd() {
-        /*mVideoAd = new InterstitialAd(this);
-        mVideoAd.setAdUnitId(getString(R.string.video_ad_id));
-        mVideoAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdClosed() {
-                afterAdWatched();
-                requestNewInterstitial(true);
-            }
-        });*/
-        mVideoAd = MobileAds.getRewardedVideoAdInstance(this);
-        mVideoAd.setRewardedVideoAdListener(this);
+        List<String> testDeviceIds = Arrays.asList(
+                "C40E23EA84B9F2235B07CE0531A253AB",
+                "CDCEF54FDF7F3A4DEC120209B12D78C6",
+                "D40CA2BD5C7E81CF7B1F9C31DFE05BE6",
+                "8A2C1665B62A2ED7A01F6628CC2094A4",
+                "BE64FAA03F9F6E8E1EAD78815EFEF7C8",
+                "9975DC9A27F0D1B042C31A65D01EEB04",
+                "08BEF4E2E5265F493ABAEC3DDD496048"
+        );
+        MobileAds.setRequestConfiguration(
+                new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build());
         requestNewVideoAd();
-        mInterstitialAd = new InterstitialAd(this);
-        mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_id));
-        mInterstitialAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdClosed() {
-                pref.edit().putInt(Constants.PREF_SHOW_AD, 0).apply();
-                super.onAdClosed();
-            }
-        });
-        requestNewInterstitial(false);
+        requestNewInterstitial();
     }
 
-    private void requestNewInterstitial(boolean isVideoAd) {
-        AdRequest adRequest = new AdRequest.Builder()
-                .addTestDevice("C40E23EA84B9F2235B07CE0531A253AB") //Rohan
-                .addTestDevice("CDCEF54FDF7F3A4DEC120209B12D78C6") // Rishab
-                .addTestDevice("D40CA2BD5C7E81CF7B1F9C31DFE05BE6")  // Dhruv
-                .addTestDevice("8A2C1665B62A2ED7A01F6628CC2094A4")  // Dhruv N
-                .addTestDevice("BE64FAA03F9F6E8E1EAD78815EFEF7C8")  // op5
-                .addTestDevice("9975DC9A27F0D1B042C31A65D01EEB04") // Gaurav
-                .addTestDevice("mydevice")
-                .build();
-        if (isVideoAd) {
-            //    mVideoAd.loadAd(adRequest);
-            requestNewVideoAd();
-        } else
-            mInterstitialAd.loadAd(adRequest);
+    private void requestNewInterstitial() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(this, getString(R.string.interstitial_ad_id), adRequest,
+                new InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull InterstitialAd ad) {
+                        mInterstitialAd = ad;
+                        mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                pref.edit().putInt(Constants.PREF_SHOW_AD, 0).apply();
+                                mInterstitialAd = null;
+                                requestNewInterstitial();
+                            }
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                mInterstitialAd = null;
+                            }
+                        });
+                    }
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        mInterstitialAd = null;
+                    }
+                });
     }
 
     private void requestNewVideoAd() {
         synchronized (mLock) {
-            if (!mIsRewardedVideoLoading) {
-                mIsRewardedVideoLoading = true;
-                Bundle extras = new Bundle();
-                extras.putBoolean("_noRefresh", true);
-                AdRequest adRequest = new AdRequest.Builder()
-                        .addNetworkExtrasBundle(AdMobAdapter.class, extras)
-                        .addNetworkExtrasBundle(UnityAdapter.class, extras)
-                        .addTestDevice("C40E23EA84B9F2235B07CE0531A253AB") //Rohan
-                        .addTestDevice("CDCEF54FDF7F3A4DEC120209B12D78C6") // Rishab
-                        .addTestDevice("D40CA2BD5C7E81CF7B1F9C31DFE05BE6")  // Dhruv
-                        .addTestDevice("8A2C1665B62A2ED7A01F6628CC2094A4")  // Dhruv N
-                        .addTestDevice("BE64FAA03F9F6E8E1EAD78815EFEF7C8")  // op5
-                        .addTestDevice("9975DC9A27F0D1B042C31A65D01EEB04") // Gaurav
-                        .addTestDevice("08BEF4E2E5265F493ABAEC3DDD496048") // Sarthak
-                        .build();
-                mVideoAd.loadAd(getString(R.string.reward_video_ad_id), adRequest);
-            }
+            if (mIsRewardedVideoLoading) return;
+            mIsRewardedVideoLoading = true;
         }
+        AdRequest adRequest = new AdRequest.Builder().build();
+        RewardedAd.load(this, getString(R.string.reward_video_ad_id), adRequest,
+                new RewardedAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull RewardedAd ad) {
+                        synchronized (mLock) { mIsRewardedVideoLoading = false; }
+                        mRewardedAd = ad;
+                        mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                mRewardedAd = null;
+                                requestNewVideoAd();
+                            }
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                mRewardedAd = null;
+                            }
+                        });
+                    }
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        synchronized (mLock) { mIsRewardedVideoLoading = false; }
+                        mRewardedAd = null;
+                    }
+                });
     }
 
     public void afterAdWatched() {
         Coins.addCoinsFromAd(this);
         SoundManager.playCorrectAnswerSound(this);
-        coins_display.setText(String.format("%d", Coins.getCurrentCoins(this)));
+        binding.questionsActivityCoinText.setText(String.format("%d", Coins.getCurrentCoins(this)));
     }
 
-    @Override
-    public void onRewarded(RewardItem reward) {
-        Toast.makeText(this, "You earned 150 coins", Toast.LENGTH_SHORT).show();
-        Coins.addCoinsFromAd(this);
-        SoundManager.playCorrectAnswerSound(this);
-        coins_display.setText(String.format("%d", Coins.getCurrentCoins(this)));
-    }
-
-    @Override
-    public void onRewardedVideoAdLeftApplication() {
-        //Toast.makeText(this, "onRewardedVideoAdLeftApplication",Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoAdClosed() {
-        //Toast.makeText(this, "onRewardedVideoAdClosed", Toast.LENGTH_SHORT).show();
-        requestNewVideoAd();
-    }
-
-    @Override
-    public void onRewardedVideoAdFailedToLoad(int errorCode) {
-        synchronized (mLock) {
-            mIsRewardedVideoLoading = false;
-        }
-        //Toast.makeText(this, "onRewardedVideoAdFailedToLoad", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoAdLoaded() {
-        synchronized (mLock) {
-            mIsRewardedVideoLoading = false;
-        }
-        //Toast.makeText(this, "onRewardedVideoAdLoaded", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoAdOpened() {
-        //Toast.makeText(this, "onRewardedVideoAdOpened", Toast.LENGTH_SHORT).show();
-    }
-
-    @Override
-    public void onRewardedVideoStarted() {
-        //Toast.makeText(this, "onRewardedVideoStarted", Toast.LENGTH_SHORT).show();
-    }
 }

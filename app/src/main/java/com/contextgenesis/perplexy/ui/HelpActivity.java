@@ -9,39 +9,14 @@ import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.contextgenesis.perplexy.R;
+import com.contextgenesis.perplexy.databinding.ActivityHelpBinding;
 import com.contextgenesis.perplexy.utils.SoundManager;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class HelpActivity extends Activity {
 
-    @Bind(R.id.help_fragment_frame)
-    RelativeLayout relativeLayout;
-
-    @Bind(R.id.help_text)
-    TextView charText;
-
-    @Bind(R.id.help_im0)
-    ImageView image0;
-
-    @Bind(R.id.help_next)
-    ImageView next;
-
-    @Bind(R.id.help_prev)
-    ImageView prev;
-
-    @Bind(R.id.help_main)
-    RelativeLayout main;
-
-    @Bind(R.id.help_skip)
-    ImageView skip_tutorial;
+    private ActivityHelpBinding binding;
 
     String charTextArray[];
 
@@ -53,20 +28,24 @@ public class HelpActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_help);
-        ButterKnife.bind(this);
+        binding = ActivityHelpBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        binding.helpPrev.setOnClickListener(v -> onPrev());
+        binding.helpNext.setOnClickListener(v -> onNext());
+        binding.helpSkip.setOnClickListener(v -> onSkip());
+
         slideOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_out_bottom);
         slideIn = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_in_top);
         fadeOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out);
         fadeIn = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_in);
 
         charTextArray = getResources().getStringArray(R.array.helpText);
-        prev.setVisibility(View.INVISIBLE);
+        binding.helpPrev.setVisibility(View.INVISIBLE);
         animateImage(COUNTER);
-        charText.setMovementMethod(new ScrollingMovementMethod());
+        binding.helpText.setMovementMethod(new ScrollingMovementMethod());
     }
 
-    @OnClick(R.id.help_prev)
     public void onPrev() {
         SoundManager.playSwipeSound(getApplicationContext());
         animateImage(--COUNTER);
@@ -74,7 +53,6 @@ public class HelpActivity extends Activity {
         setBackground();
     }
 
-    @OnClick(R.id.help_next)
     public void onNext() {
         SoundManager.playSwipeSound(getApplicationContext());
         if (++COUNTER >= 11) {
@@ -86,7 +64,6 @@ public class HelpActivity extends Activity {
         setBackground();
     }
 
-    @OnClick(R.id.help_skip)
     public void onSkip() {
         finish();
         return;
@@ -95,20 +72,20 @@ public class HelpActivity extends Activity {
 
     private void setButtonVisibility() {
         if (COUNTER <= 0) {
-            prev.setVisibility(View.INVISIBLE);
+            binding.helpPrev.setVisibility(View.INVISIBLE);
         } else {
-            prev.setVisibility(View.VISIBLE);
+            binding.helpPrev.setVisibility(View.VISIBLE);
         }
         if (COUNTER >= 10) {
-            next.setImageResource(R.drawable.ok);
+            binding.helpNext.setImageResource(R.drawable.ok);
         } else {
-            next.setImageResource(R.drawable.right);
+            binding.helpNext.setImageResource(R.drawable.right);
         }
     }
 
     public void setCharText(int COUNTER) {
         try {
-            charText.setText("" + charTextArray[COUNTER]);
+            binding.helpText.setText("" + charTextArray[COUNTER]);
         }
         catch (ArrayIndexOutOfBoundsException e){
             Log.e("Tutorial",e.getMessage());
@@ -120,7 +97,7 @@ public class HelpActivity extends Activity {
         SharedPreferences prefs = getSharedPreferences(CharacterStore.CHAR_SHARED_PREFS, Context.MODE_PRIVATE);
         String resourceString = prefs.getString(CharacterStore.STRING_EXPRESSION_HAPPY_CLOSED, "tutorial" + COUNTER);
         int resourceID = getResources().getIdentifier(resourceString, "drawable", getPackageName());
-        image0.setImageResource(resourceID);
+        binding.helpIm0.setImageResource(resourceID);
         animateText();
     }
 
@@ -134,7 +111,7 @@ public class HelpActivity extends Activity {
             @Override
             public void onAnimationEnd(Animation animation) {
                 setCharText(COUNTER);
-                charText.startAnimation(slideIn);
+                binding.helpText.startAnimation(slideIn);
             }
 
             @Override
@@ -142,43 +119,43 @@ public class HelpActivity extends Activity {
 
             }
         });
-        charText.startAnimation(slideOut);
+        binding.helpText.startAnimation(slideOut);
     }
 
     private void setBackground() {
         switch (COUNTER) {
             case 0:
-                main.setBackgroundColor(getResources().getColor(R.color.blue_d_grey));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.blue_d_grey));
                 break;
             case 1:
-                main.setBackgroundColor(getResources().getColor(R.color.black_d_material_black));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.black_d_material_black));
                 break;
             case 2:
-                main.setBackgroundColor(getResources().getColor(R.color.black_d_material));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.black_d_material));
                 break;
             case 3:
-                main.setBackgroundColor(getResources().getColor(R.color.purple_l_plum));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.purple_l_plum));
                 break;
             case 4:
-                main.setBackgroundColor(getResources().getColor(R.color.purple_l_plum));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.purple_l_plum));
                 break;
             case 5:
-                main.setBackgroundColor(getResources().getColor(R.color.blue_l_steel_blue));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.blue_l_steel_blue));
                 break;
             case 6:
-                main.setBackgroundColor(getResources().getColor(R.color.blue_l_steel_blue));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.blue_l_steel_blue));
                 break;
             case 7:
-                main.setBackgroundColor(getResources().getColor(R.color.red_l_chestnut));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.red_l_chestnut));
                 break;
             case 8:
-                main.setBackgroundColor(getResources().getColor(R.color.red_l_chestnut));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.red_l_chestnut));
                 break;
             case 9:
-                main.setBackgroundColor(getResources().getColor(R.color.purple_l_plum));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.purple_l_plum));
                 break;
             case 10:
-                main.setBackgroundColor(getResources().getColor(R.color.blue_d_grey));
+                binding.helpMain.setBackgroundColor(getResources().getColor(R.color.blue_d_grey));
                 break;
         }
     }

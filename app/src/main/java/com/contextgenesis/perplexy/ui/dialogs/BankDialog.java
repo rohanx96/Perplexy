@@ -3,216 +3,159 @@ package com.contextgenesis.perplexy.ui.dialogs;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatDialogFragment;
-import android.support.v7.widget.CardView;
 import android.util.Log;
 import android.view.Window;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import com.android.billingclient.api.BillingClient;
+import com.android.billingclient.api.BillingClientStateListener;
+import com.android.billingclient.api.BillingFlowParams;
+import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.ConsumeParams;
+import com.android.billingclient.api.ProductDetails;
+import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.PurchasesUpdatedListener;
+import com.android.billingclient.api.QueryProductDetailsParams;
 import com.contextgenesis.perplexy.R;
-import com.contextgenesis.perplexy.billingUtils.IabHelper;
-import com.contextgenesis.perplexy.billingUtils.IabResult;
-import com.contextgenesis.perplexy.billingUtils.Inventory;
-import com.contextgenesis.perplexy.billingUtils.Purchase;
-import com.contextgenesis.perplexy.ui.NumberLineActivity;
+import com.contextgenesis.perplexy.databinding.DialogInappPurchasesBinding;
 import com.contextgenesis.perplexy.utils.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 public class BankDialog extends Dialog {
 
-    @Bind(R.id.cardview_stack_of_coins)
-    CardView stack;
+    private static final String TAG = "BankDialog";
 
-    IabHelper mHelper;
-    Context context;
+    // Product IDs — must match what's configured in Google Play Console
+    private static final String SKU_STACK  = "stack";
+    private static final String SKU_PILE   = "pile";
+    private static final String SKU_BAG    = "bag";
+    private static final String SKU_CHEST  = "chest";
+    private static final String SKU_VAULT  = "vault";
 
-    @OnClick(R.id.cardview_stack_of_coins)
-    public void onClick_stack() {
-        init("stack");
-    }
-
-    @OnClick(R.id.cardview_pile_of_coins)
-    public void onClick_pile() {
-
-    }
-
-    @OnClick(R.id.cardview_bag_of_coins)
-    public void onClick_bag() {
-
-    }
-
-    @OnClick(R.id.cardview_chest_of_coins)
-    public void onClick_chest() {
-
-    }
-
-    @OnClick(R.id.cardview_vault_of_coins)
-    public void onClick_vault() {
-
-    }
+    private DialogInappPurchasesBinding binding;
+    private BillingClient billingClient;
+    private List<ProductDetails> productDetailsList = new ArrayList<>();
 
     public BankDialog(Context context) {
         super(context);
-        this.context = context;
-    }
-
-    public void init(final String type) {
-        String base64EncodedPublicKey = Constants.base64EncodedPublicKey;
-        mHelper = new IabHelper(context, base64EncodedPublicKey);
-
-        final IabHelper.QueryInventoryFinishedListener
-                mQueryFinishedListener = new IabHelper.QueryInventoryFinishedListener() {
-            public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
-                if (result.isFailure()) {
-                    // handle error
-                    return;
-                }
-//                if (inventory.getSkuDetails("stack") == null)
-//                    Log.wtf("Query Inventory", "Not Found");
-                else {
-                    String type_price =
-                            inventory.getSkuDetails(type).getPrice();
-                    System.out.println("TYPE PRICE: " + type_price);
-                }
-            }
-        };
-
-        mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
-            public void onIabSetupFinished(IabResult result) {
-                if (!result.isSuccess()) {
-                    // Oh no, there was a problem.
-                    Log.d("APP BILLING", "Problem setting up In-app Billing: " + result);
-                }
-                // Hooray, IAB is fully set up!
-//                List itemList = new ArrayList();
-//                itemList.add("stack");
-//
-//                try {
-//                    mHelper.queryInventoryAsync(true, itemList, itemList, mQueryFinishedListener);
-//                } catch (IabHelper.IabAsyncInProgressException e) {
-//                    e.printStackTrace();
-//                }
-
-                makePurchase(type);
-            }
-        });
-    }
-
-    public void makePurchase(final String type) {
-        Toast.makeText(getContext(), "Purchasing " + type + " of coins..", Toast.LENGTH_LONG).show();
-        // Consumer
-        final IabHelper.OnConsumeFinishedListener mConsumeFinishedListener =
-                new IabHelper.OnConsumeFinishedListener() {
-                    public void onConsumeFinished(Purchase purchase, IabResult result) {
-                        if (result.isSuccess()) {
-                            // TODO: add coins
-                            switch (type) {
-                                case "stack": {
-                                    Toast.makeText(getContext(), "Coins added successfully", Toast.LENGTH_LONG).show();
-                                    break;
-                                }
-                                case "pile": {
-                                    Toast.makeText(getContext(), "Coins added successfully", Toast.LENGTH_LONG).show();
-                                    break;
-                                }
-                                case "bag": {
-                                    Toast.makeText(getContext(), "Coins added successfully", Toast.LENGTH_LONG).show();
-                                    break;
-                                }
-                                case "chest": {
-                                    Toast.makeText(getContext(), "Coins added successfully", Toast.LENGTH_LONG).show();
-                                    break;
-                                }
-                                case "vault": {
-                                    Toast.makeText(getContext(), "Coins added successfully", Toast.LENGTH_LONG).show();
-                                    break;
-                                }
-                            }
-                            // provision the in-app purchase to the user
-                            // (for example, credit 50 gold coins to player's character)
-                        } else {
-                            // handle error
-                        }
-                    }
-                };
-
-
-        IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener
-                = new IabHelper.OnIabPurchaseFinishedListener() {
-            public void onIabPurchaseFinished(IabResult result, Purchase purchase) {
-                if (result.isFailure()) {
-                    Log.d("Purchase Failed", "Error purchasing: " + result);
-                    return;
-                } else if (purchase.getSku().equals(type)) {
-                    // consume the coins and update the UI
-                    try {
-                        mHelper.consumeAsync(purchase,
-                                mConsumeFinishedListener);
-                    } catch (IabHelper.IabAsyncInProgressException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
-
-        try {
-            // For tracking online
-            int requestCode = 0;
-            switch (type) {
-                case "stack": {
-                    requestCode = 10001;
-                    break;
-                }
-                case "pile": {
-                    requestCode = 20001;
-                    break;
-                }
-                case "bag": {
-                    requestCode = 30001;
-                    break;
-                }
-                case "chest": {
-                    requestCode = 40001;
-                    break;
-                }
-                case "vault": {
-                    requestCode = 50001;
-                    break;
-                }
-            }
-            mHelper.launchPurchaseFlow((Activity) context, type, requestCode,
-                    mPurchaseFinishedListener, type + " of coins");
-        } catch (IabHelper.IabAsyncInProgressException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.dialog_inapp_purchases);
-        ButterKnife.bind(this);
+        binding = DialogInappPurchasesBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
 
-        this.setOnDismissListener(new OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialogInterface) {
-                if (mHelper != null) try {
-                    mHelper.dispose();
-                } catch (IabHelper.IabAsyncInProgressException e) {
-                    e.printStackTrace();
+        binding.cardviewStackOfCoins.setOnClickListener(v -> launchPurchase(SKU_STACK));
+        binding.cardviewPileOfCoins.setOnClickListener(v ->  launchPurchase(SKU_PILE));
+        binding.cardviewBagOfCoins.setOnClickListener(v ->   launchPurchase(SKU_BAG));
+        binding.cardviewChestOfCoins.setOnClickListener(v -> launchPurchase(SKU_CHEST));
+        binding.cardviewVaultOfCoins.setOnClickListener(v -> launchPurchase(SKU_VAULT));
+
+        setupBillingClient();
+    }
+
+    private void setupBillingClient() {
+        PurchasesUpdatedListener purchasesUpdatedListener = (billingResult, purchases) -> {
+            if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK
+                    && purchases != null) {
+                for (Purchase purchase : purchases) {
+                    handlePurchase(purchase);
                 }
-                mHelper = null;
+            } else {
+                Log.w(TAG, "Purchase update: " + billingResult.getDebugMessage());
+            }
+        };
+
+        billingClient = BillingClient.newBuilder(getContext())
+                .setListener(purchasesUpdatedListener)
+                .enablePendingPurchases()
+                .build();
+
+        billingClient.startConnection(new BillingClientStateListener() {
+            @Override
+            public void onBillingSetupFinished(@NonNull BillingResult billingResult) {
+                if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                    queryProductDetails();
+                }
+            }
+
+            @Override
+            public void onBillingServiceDisconnected() {
+                Log.w(TAG, "Billing service disconnected");
             }
         });
     }
 
+    private void queryProductDetails() {
+        List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+        for (String sku : new String[]{SKU_STACK, SKU_PILE, SKU_BAG, SKU_CHEST, SKU_VAULT}) {
+            products.add(QueryProductDetailsParams.Product.newBuilder()
+                    .setProductId(sku)
+                    .setProductType(BillingClient.ProductType.INAPP)
+                    .build());
+        }
+        QueryProductDetailsParams params = QueryProductDetailsParams.newBuilder()
+                .setProductList(products)
+                .build();
+
+        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsList) -> {
+            if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                this.productDetailsList = productDetailsList;
+            }
+        });
+    }
+
+    private void launchPurchase(String productId) {
+        ProductDetails details = findProductDetails(productId);
+        if (details == null || !(getContext() instanceof Activity)) {
+            Toast.makeText(getContext(), "Unable to start purchase", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        List<BillingFlowParams.ProductDetailsParams> productDetailsParamsList = new ArrayList<>();
+        productDetailsParamsList.add(
+                BillingFlowParams.ProductDetailsParams.newBuilder()
+                        .setProductDetails(details)
+                        .build());
+        BillingFlowParams flowParams = BillingFlowParams.newBuilder()
+                .setProductDetailsParamsList(productDetailsParamsList)
+                .build();
+        billingClient.launchBillingFlow((Activity) getContext(), flowParams);
+    }
+
+    private void handlePurchase(Purchase purchase) {
+        if (purchase.getPurchaseState() == Purchase.PurchaseState.PURCHASED) {
+            // Consume the purchase so it can be bought again
+            ConsumeParams consumeParams = ConsumeParams.newBuilder()
+                    .setPurchaseToken(purchase.getPurchaseToken())
+                    .build();
+            billingClient.consumeAsync(consumeParams, (billingResult, purchaseToken) -> {
+                if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                    // TODO: Grant coins to the user based on which product was purchased
+                    Toast.makeText(getContext(), "Coins added successfully", Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+    }
+
+    private ProductDetails findProductDetails(String productId) {
+        for (ProductDetails d : productDetailsList) {
+            if (d.getProductId().equals(productId)) return d;
+        }
+        return null;
+    }
+
+    @Override
+    public void dismiss() {
+        if (billingClient != null && billingClient.isReady()) {
+            billingClient.endConnection();
+        }
+        super.dismiss();
+    }
 }

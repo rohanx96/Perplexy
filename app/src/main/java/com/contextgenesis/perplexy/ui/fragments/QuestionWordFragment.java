@@ -6,8 +6,8 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.view.ViewPager;
+import androidx.fragment.app.Fragment;
+import androidx.viewpager.widget.ViewPager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -18,17 +18,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.callbacks.QuestionsCallback;
+import com.contextgenesis.perplexy.databinding.QuestionWordCardBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.elements.GenericQuestion;
 import com.contextgenesis.perplexy.ui.QuestionsActivity;
@@ -42,10 +40,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 /**
  * Created by rish on 9/3/16.
  */
@@ -58,29 +52,7 @@ public class QuestionWordFragment extends Fragment {
     GenericQuestion genericQuestion;
     SharedPreferences pref;
 
-    @Bind(R.id.qcard_word_previous)
-    ImageButton prevQuestion;
-
-    @Bind(R.id.qcard_word_next)
-    ImageButton nextQuestion;
-
-    @Bind(R.id.qcard_word_question)
-    TextView tvQuestion;
-
-    @Bind(R.id.q_card_word_ll_answerrow_q)
-    LinearLayout answerRow;
-
-    @Bind(R.id.q_card_word_ll_row1_q)
-    LinearLayout row1;
-
-    @Bind(R.id.q_card_word_ll_row2_q)
-    LinearLayout row2;
-
-    @Bind(R.id.word_canvas_pull)
-    Button canvas;
-
-    @Bind(R.id.textAreaScroller)
-    ScrollView scroll;
+    private QuestionWordCardBinding binding;
 
     ArrayList<Character> jumbledCharacters;
 
@@ -91,9 +63,13 @@ public class QuestionWordFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.question_word_card, container, false);
-        ButterKnife.bind(this, rootView);
-        this.cardContent = (RelativeLayout) rootView.findViewById(R.id.question_card_content);
+        binding = QuestionWordCardBinding.inflate(inflater, container, false);
+
+        binding.qcardWordNext.setOnClickListener(v -> nextQuestion());
+        binding.qcardWordPrevious.setOnClickListener(v -> previousQuestion());
+        binding.wordCanvasPull.setOnClickListener(v -> canvas_pulldown());
+
+        this.cardContent = (RelativeLayout) binding.getRoot().findViewById(R.id.question_card_content);
         this.mCallback = (QuestionsCallback) getActivity();
         Bundle args = getArguments();
         POSITION = args.getInt(Constants.BUNDLE_QUESTION_NUMBER);
@@ -104,32 +80,38 @@ public class QuestionWordFragment extends Fragment {
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
         int height = displaymetrics.heightPixels;
 
-        scroll.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height / 4));
+        binding.textAreaScroller.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height / 4));
 
         genericQuestion = JSONUtils.getQuestionAt(getActivity(), CATEGORY, POSITION - 1);
-        tvQuestion.setText(genericQuestion.question);
+        binding.qcardWordQuestion.setText(genericQuestion.question);
 
         answer = genericQuestion.answer;
         answerPadCharacters = genericQuestion.pad_characters;
 
         if (genericQuestion.question_number == 1) {
-            this.prevQuestion.setVisibility(View.GONE);
+            binding.qcardWordPrevious.setVisibility(View.GONE);
         }
 
         if (genericQuestion.question_number == Constants.RIDDLE_COUNT && genericQuestion.category == Constants.GAME_TYPE_RIDDLE) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardWordNext.setVisibility(View.GONE);
         }
         if (genericQuestion.question_number == Constants.SEQUENCE_COUNT && genericQuestion.category == Constants.GAME_TYPE_SEQUENCES) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardWordNext.setVisibility(View.GONE);
         }
         if (genericQuestion.question_number == Constants.LOGIC_QUESTION && genericQuestion.category == Constants.GAME_TYPE_LOGIC) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardWordNext.setVisibility(View.GONE);
         }
 
         setUpJumbledCharacters();
         setUpBlanksAndRows();
 
-        return rootView;
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 
     @Override
@@ -157,7 +139,6 @@ public class QuestionWordFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_word_next)
     public void nextQuestion() {
         if (isUIVisibleToUser) {
             ViewPager pager = (ViewPager) getActivity().findViewById(R.id.questions_activity_pager);
@@ -166,7 +147,6 @@ public class QuestionWordFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_word_previous)
     public void previousQuestion() {
         if (isUIVisibleToUser) {
             ViewPager pager = (ViewPager) getActivity().findViewById(R.id.questions_activity_pager);
@@ -175,10 +155,9 @@ public class QuestionWordFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.word_canvas_pull)
     public void canvas_pulldown() {
         if (isUIVisibleToUser) {
-            DrawingView.setUpCanvas(getContext(), QuestionsActivity.convertDip2Pixels(getContext(), tvQuestion.getHeight() + 80));
+            DrawingView.setUpCanvas(getContext(), QuestionsActivity.convertDip2Pixels(getContext(), binding.qcardWordQuestion.getHeight() + 80));
             SoundManager.playButtonClickSound(getActivity());
         }
     }
@@ -190,15 +169,16 @@ public class QuestionWordFragment extends Fragment {
     }
 
     private void setUpBlanksAndRows() {
+        if (binding == null) return;
 
-        row1.removeAllViews();
-        row2.removeAllViews();
-        answerRow.removeAllViews();
+        binding.qCardWordLlRow1Q.removeAllViews();
+        binding.qCardWordLlRow2Q.removeAllViews();
+        binding.qCardWordLlAnswerrowQ.removeAllViews();
 
         for (int i = 0; i < answer.length(); i++) {
             if (jumbledCharacters.get(i) == ' ') {
                 final TextView emptyTextView = generateEmptyTextView();
-                answerRow.addView(emptyTextView);
+                binding.qCardWordLlAnswerrowQ.addView(emptyTextView);
             } else {
                 final TextView answerTV = generateBlanksTextView(i);
                 final int m = i;
@@ -212,7 +192,7 @@ public class QuestionWordFragment extends Fragment {
                         }
                     }
                 });
-                answerRow.addView(answerTV);
+                binding.qCardWordLlAnswerrowQ.addView(answerTV);
             }
         }
 
@@ -232,7 +212,7 @@ public class QuestionWordFragment extends Fragment {
                 }
             });
 
-            row1.addView(answerTV);
+            binding.qCardWordLlRow1Q.addView(answerTV);
         }
 
         for (int i = answerPadCharacters.length() / 2; i < answerPadCharacters.length(); i++) {
@@ -251,7 +231,7 @@ public class QuestionWordFragment extends Fragment {
                 }
             });
 
-            row2.addView(answerTV);
+            binding.qCardWordLlRow2Q.addView(answerTV);
         }
     }
 
@@ -289,8 +269,8 @@ public class QuestionWordFragment extends Fragment {
                 /*Display animation and return false*/
                 final Animation animOvershoot = AnimationUtils.loadAnimation(getActivity(), R.anim.wobble);
 
-                for (int i = 0; i < answerRow.getChildCount(); i++) {
-                    View v = answerRow.getChildAt(i);
+                for (int i = 0; i < binding.qCardWordLlAnswerrowQ.getChildCount(); i++) {
+                    View v = binding.qCardWordLlAnswerrowQ.getChildAt(i);
                     v.startAnimation(animOvershoot);
                 }
 
@@ -419,6 +399,7 @@ public class QuestionWordFragment extends Fragment {
     }
 
     public void lockQuestionIfRequired() {
+        if (binding == null) return;
         //Log.i("question ", answer);
         Log.i("text card ", "position " + POSITION + " category " + CATEGORY + " status " + GenericAnswerDetails.getStatus(POSITION, CATEGORY));
         switch (GenericAnswerDetails.getStatus(POSITION, CATEGORY)) {
@@ -450,7 +431,7 @@ public class QuestionWordFragment extends Fragment {
                     }
                 });
                 cardContent.addView(lock, cardContent.getChildCount() - 2);
-                canvas.setVisibility(View.GONE);
+                binding.wordCanvasPull.setVisibility(View.GONE);
                 break;
             case Constants.INCORRECT:
                 //mCallback.setIsQuestionLocked(true);
@@ -478,7 +459,7 @@ public class QuestionWordFragment extends Fragment {
                     }
                 });
                 cardContent.addView(options_lock, cardContent.getChildCount() - 2);
-                canvas.setVisibility(View.GONE);
+                binding.wordCanvasPull.setVisibility(View.GONE);
                 break;
         }
     }

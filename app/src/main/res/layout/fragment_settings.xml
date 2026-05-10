@@ -48,7 +48,7 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.SearchResult.Title"
                 android:textColor="@color/white" />
 
-            <com.kyleduo.switchbutton.SwitchButton
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -56,12 +56,7 @@
                 android:layout_alignParentRight="true"
                 android:layout_gravity="center"
                 android:layout_marginBottom="16dp"
-                android:layout_marginRight="16dp"
-                app:kswBackDrawable="@drawable/switch_back"
-                app:kswBackMeasureRatio="2"
-                app:kswThumbDrawable="@drawable/switch_thumb"
-                app:kswThumbHeight="18dp"
-                app:kswThumbWidth="20dp" />
+                android:layout_marginRight="16dp" />
 
             <TextView
                 android:id="@+id/settings_rate_us"
