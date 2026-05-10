@@ -10,7 +10,7 @@
     android:orientation="vertical"
     tools:context="com.contextgenesis.perplexy.ui.MainActivity">
 
-    <android.support.v4.view.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
+    <androidx.viewpager.widget.ViewPager xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/questions_activity_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
