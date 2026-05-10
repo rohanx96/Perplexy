@@ -2,27 +2,19 @@ package com.contextgenesis.perplexy.ui.fragments;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import androidx.fragment.app.Fragment;
-import androidx.core.content.ContextCompat;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.SeekBar;
-import android.widget.TextView;
 
 import com.contextgenesis.perplexy.PerplexyApplication;
 import com.contextgenesis.perplexy.R;
+import com.contextgenesis.perplexy.databinding.FragmentFrontpageBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.HelpActivity;
 import com.contextgenesis.perplexy.ui.MainActivity;
@@ -30,54 +22,36 @@ import com.contextgenesis.perplexy.ui.NumberLineActivity;
 import com.contextgenesis.perplexy.utils.Analytics;
 import com.contextgenesis.perplexy.utils.Constants;
 import com.contextgenesis.perplexy.utils.SoundManager;
-import com.mikhaellopez.circularprogressbar.CircularProgressBar;
 
 import java.util.ArrayList;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 public class FrontPageFragment extends Fragment {
 
-    @Bind(R.id.home_tv_heading)
-    TextView heading;
-
-    @Bind(R.id.home_tv_lvl_text)
-    TextView gameTypeText;
-
-    @Bind(R.id.home_seekbar)
-    SeekBar gameSeekBar;
-
-    @Bind(R.id.home_play)
-    ImageView playButton;
-
-    @Bind(R.id.game_1)
-    CircularProgressBar gameType1;
-    @Bind(R.id.game_2)
-    CircularProgressBar gameType2;
-    @Bind(R.id.game_3)
-    CircularProgressBar gameType3;
+    private FragmentFrontpageBinding binding;
 
     private int selectedGameType = 1;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        ViewGroup rootView = (ViewGroup) inflater.inflate(
-                R.layout.fragment_frontpage, container, false);
+        binding = FragmentFrontpageBinding.inflate(inflater, container, false);
 
-        ButterKnife.bind(this, rootView);
+        binding.game1.setOnClickListener(v -> onClickGame1());
+        binding.game2.setOnClickListener(v -> onClickGame2());
+        binding.game3.setOnClickListener(v -> onClickGame3());
+        binding.homePlay.setOnClickListener(v -> playGame());
+        binding.homeSettingsButton.setOnClickListener(v -> openSettings());
+        binding.homeStatisticsButton.setOnClickListener(v -> openStats());
 
-        gameSeekBar.setProgress(1);
-        gameType2.performClick();
-        gameTypeText.setText(getGameTypeText(1));
+        binding.homeSeekbar.setProgress(1);
+        binding.game2.performClick();
+        binding.homeTvLvlText.setText(getGameTypeText(1));
         resetLevelSizes(1);
 
 //        setUpSeekBar();
 
         Typeface typeFace = Typeface.createFromAsset(getActivity().getAssets(), "tagus.ttf");
-        heading.setTypeface(typeFace);
+        binding.homeTvHeading.setTypeface(typeFace);
 
         for (int category = 0; category < 3; category++) {
             ArrayList<GenericAnswerDetails> answerDetails = GenericAnswerDetails.listAll(category);
@@ -92,23 +66,29 @@ public class FrontPageFragment extends Fragment {
                 correctCount = 1;
             }
             if (category == Constants.GAME_TYPE_LOGIC) {
-                gameType1.setProgress(correctCount / answerDetails.size() * 100);
+                binding.game1.setProgress(correctCount / answerDetails.size() * 100);
             }
             if (category == Constants.GAME_TYPE_RIDDLE) {
-                gameType2.setProgress(correctCount / answerDetails.size() * 100);
+                binding.game2.setProgress(correctCount / answerDetails.size() * 100);
             }
             if (category == Constants.GAME_TYPE_SEQUENCES) {
-                gameType3.setProgress(correctCount / answerDetails.size() * 100);
+                binding.game3.setProgress(correctCount / answerDetails.size() * 100);
             }
         }
 
-        return rootView;
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 
     private void setUpSeekBar() {
-        gameSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        binding.homeSeekbar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, final int progress, boolean fromUser) {
+            public void onProgressChanged(android.widget.SeekBar seekBar, final int progress, boolean fromUser) {
                 final Animation slideOut = AnimationUtils.loadAnimation(getActivity(), android.R.anim.slide_out_right);
                 final Animation slideIn = AnimationUtils.loadAnimation(getActivity(), android.R.anim.slide_in_left);
 
@@ -120,8 +100,8 @@ public class FrontPageFragment extends Fragment {
 
                     @Override
                     public void onAnimationEnd(Animation animation) {
-                        gameTypeText.setText(getGameTypeText(progress));
-                        gameTypeText.startAnimation(slideIn);
+                        binding.homeTvLvlText.setText(getGameTypeText(progress));
+                        binding.homeTvLvlText.startAnimation(slideIn);
                     }
 
                     @Override
@@ -131,16 +111,16 @@ public class FrontPageFragment extends Fragment {
                 });
                 selectedGameType = progress;
                 resetLevelSizes(progress);
-                gameTypeText.startAnimation(slideOut);
+                binding.homeTvLvlText.startAnimation(slideOut);
             }
 
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
+            public void onStartTrackingTouch(android.widget.SeekBar seekBar) {
 
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
+            public void onStopTrackingTouch(android.widget.SeekBar seekBar) {
 
             }
         });
@@ -162,8 +142,8 @@ public class FrontPageFragment extends Fragment {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                gameTypeText.setText(getGameTypeText(progress));
-                gameTypeText.startAnimation(slideIn);
+                binding.homeTvLvlText.setText(getGameTypeText(progress));
+                binding.homeTvLvlText.startAnimation(slideIn);
             }
 
             @Override
@@ -173,31 +153,27 @@ public class FrontPageFragment extends Fragment {
         });
         selectedGameType = progress;
         resetLevelSizes(progress);
-        gameTypeText.startAnimation(slideOut);
+        binding.homeTvLvlText.startAnimation(slideOut);
     }
 
-    @OnClick(R.id.game_1)
     public void onClickGame1() {
-        gameSeekBar.setProgress(0);
+        binding.homeSeekbar.setProgress(0);
         SoundManager.playSwipeSound(getActivity());
         statusChanges(0);
     }
 
-    @OnClick(R.id.game_2)
     public void onClickGame2() {
-        gameSeekBar.setProgress(1);
+        binding.homeSeekbar.setProgress(1);
         SoundManager.playSwipeSound(getActivity());
         statusChanges(1);
     }
 
-    @OnClick(R.id.game_3)
     public void onClickGame3() {
-        gameSeekBar.setProgress(2);
+        binding.homeSeekbar.setProgress(2);
         SoundManager.playSwipeSound(getActivity());
         statusChanges(2);
     }
 
-    @OnClick(R.id.home_play)
     public void playGame() {
         /*
         *Send which game type user chose with this intent
@@ -232,38 +208,38 @@ public class FrontPageFragment extends Fragment {
     }
 
     private void resetLevelSizes(int lvl) {
-        gameType1.requestLayout();
-        gameType1.getLayoutParams().height = convertDip2Pixels(getActivity(), 38);
-        gameType1.getLayoutParams().width = convertDip2Pixels(getActivity(), 38);
-        gameType2.requestLayout();
-        gameType2.getLayoutParams().height = convertDip2Pixels(getActivity(), 38);
-        gameType2.getLayoutParams().width = convertDip2Pixels(getActivity(), 38);
-        gameType3.requestLayout();
-        gameType3.getLayoutParams().height = convertDip2Pixels(getActivity(), 38);
-        gameType3.getLayoutParams().width = convertDip2Pixels(getActivity(), 38);
+        binding.game1.requestLayout();
+        binding.game1.getLayoutParams().height = convertDip2Pixels(getActivity(), 38);
+        binding.game1.getLayoutParams().width = convertDip2Pixels(getActivity(), 38);
+        binding.game2.requestLayout();
+        binding.game2.getLayoutParams().height = convertDip2Pixels(getActivity(), 38);
+        binding.game2.getLayoutParams().width = convertDip2Pixels(getActivity(), 38);
+        binding.game3.requestLayout();
+        binding.game3.getLayoutParams().height = convertDip2Pixels(getActivity(), 38);
+        binding.game3.getLayoutParams().width = convertDip2Pixels(getActivity(), 38);
 
-        gameType1.setColor(getResources().getColor(R.color.white));
-        gameType2.setColor(getResources().getColor(R.color.white));
-        gameType3.setColor(getResources().getColor(R.color.white));
+        binding.game1.setColor(getResources().getColor(R.color.white));
+        binding.game2.setColor(getResources().getColor(R.color.white));
+        binding.game3.setColor(getResources().getColor(R.color.white));
 
         switch (lvl) {
             case 0:
-                gameType1.requestLayout();
-                gameType1.getLayoutParams().height = convertDip2Pixels(getActivity(), 55);
-                gameType1.getLayoutParams().width = convertDip2Pixels(getActivity(), 55);
-                gameType1.setColor(getResources().getColor(R.color.green_progress));
+                binding.game1.requestLayout();
+                binding.game1.getLayoutParams().height = convertDip2Pixels(getActivity(), 55);
+                binding.game1.getLayoutParams().width = convertDip2Pixels(getActivity(), 55);
+                binding.game1.setColor(getResources().getColor(R.color.green_progress));
                 return;
             case 1:
-                gameType2.requestLayout();
-                gameType2.getLayoutParams().height = convertDip2Pixels(getActivity(), 55);
-                gameType2.getLayoutParams().width = convertDip2Pixels(getActivity(), 55);
-                gameType2.setColor(getResources().getColor(R.color.green_progress));
+                binding.game2.requestLayout();
+                binding.game2.getLayoutParams().height = convertDip2Pixels(getActivity(), 55);
+                binding.game2.getLayoutParams().width = convertDip2Pixels(getActivity(), 55);
+                binding.game2.setColor(getResources().getColor(R.color.green_progress));
                 return;
             case 2:
-                gameType3.requestLayout();
-                gameType3.getLayoutParams().height = convertDip2Pixels(getActivity(), 55);
-                gameType3.getLayoutParams().width = convertDip2Pixels(getActivity(), 55);
-                gameType3.setColor(getResources().getColor(R.color.green_progress));
+                binding.game3.requestLayout();
+                binding.game3.getLayoutParams().height = convertDip2Pixels(getActivity(), 55);
+                binding.game3.getLayoutParams().width = convertDip2Pixels(getActivity(), 55);
+                binding.game3.setColor(getResources().getColor(R.color.green_progress));
                 return;
             /*case 3:
                 gameType4.requestLayout();
@@ -275,12 +251,10 @@ public class FrontPageFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.home_settings_button)
     public void openSettings() {
         ((MainActivity) getActivity()).goToSettings();
     }
 
-    @OnClick(R.id.home_statistics_button)
     public void openStats() {
         ((MainActivity) getActivity()).goToStats();
     }
@@ -292,6 +266,7 @@ public class FrontPageFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (binding == null) return;
         /* Make the activity fullscreen */
         for (int category = 0; category < 3; category++) {
             ArrayList<GenericAnswerDetails> answerDetails = GenericAnswerDetails.listAll(category);
@@ -305,13 +280,13 @@ public class FrontPageFragment extends Fragment {
                 correctCount = 1;
             }
             if (category == Constants.GAME_TYPE_LOGIC) {
-                gameType1.setProgress(correctCount / answerDetails.size() * 100);
+                binding.game1.setProgress(correctCount / answerDetails.size() * 100);
             }
             if (category == Constants.GAME_TYPE_RIDDLE) {
-                gameType2.setProgress(correctCount / answerDetails.size() * 100);
+                binding.game2.setProgress(correctCount / answerDetails.size() * 100);
             }
             if (category == Constants.GAME_TYPE_SEQUENCES) {
-                gameType3.setProgress(correctCount / answerDetails.size() * 100);
+                binding.game3.setProgress(correctCount / answerDetails.size() * 100);
             }
         }
 

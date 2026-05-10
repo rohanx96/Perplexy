@@ -13,12 +13,12 @@ import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 import android.util.Log;
 import android.view.View;
-import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import android.view.LayoutInflater;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AlertDialog;
+import com.contextgenesis.perplexy.databinding.ActivityMainBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.fragments.FrontPageFragment;
 import com.contextgenesis.perplexy.ui.fragments.SettingsFragment;
@@ -26,37 +26,30 @@ import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.ui.fragments.StatisticsFragment;
 import com.contextgenesis.perplexy.utils.Constants;
-import me.relex.circleindicator.CircleIndicator;
-
-import butterknife.ButterKnife;
 
 public class MainActivity extends FragmentActivity {
 
     private static final int NUM_PAGES = 3;
 
     private ViewPager mPager;
-    private FrameLayout mContainer;
+    private ActivityMainBinding binding;
 
     private PagerAdapter mPagerAdapter;
 
-    CircleIndicator circlePageIndicator;
     FallingDrawables fallingDrawables;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         onFirstRun();
-        mContainer = (FrameLayout) findViewById(R.id.main_activity_container);
-        // Instantiate a ViewPager and a PagerAdapter.
-        mPager = (ViewPager) findViewById(R.id.questions_activity_pager);
+        mPager = binding.questionsActivityPager;
         mPagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        circlePageIndicator = (CircleIndicator) findViewById(R.id.indicator);
         mPager.setAdapter(mPagerAdapter);
-        circlePageIndicator.setViewPager(mPager);
+        binding.indicator.setViewPager(mPager);
         mPager.setCurrentItem(1, false);
-        fallingDrawables = new FallingDrawables(this, mContainer);
+        fallingDrawables = new FallingDrawables(this, binding.mainActivityContainer);
         showRateDialog();
 
     }
@@ -65,7 +58,7 @@ public class MainActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         /* Make the activity fullscreen */
-        mContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
+        binding.mainActivityContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY

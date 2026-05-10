@@ -13,23 +13,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.contextgenesis.perplexy.ui.ContributeActivity;
 import com.contextgenesis.perplexy.ui.HelpActivity;
-import androidx.appcompat.widget.SwitchCompat;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AlertDialog;
 import com.contextgenesis.perplexy.R;
+import com.contextgenesis.perplexy.databinding.FragmentSettingsBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.AboutActivity;
 import com.contextgenesis.perplexy.utils.Constants;
 import com.contextgenesis.perplexy.utils.SoundManager;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 /**
  * Created by rose on 10/3/16.
@@ -40,40 +35,37 @@ public class SettingsFragment extends Fragment {
     SharedPreferences pref;
     SharedPreferences.Editor editor;
 
-    @Bind(R.id.switchButton)
-    SwitchCompat volume;
-
-    @Bind(R.id.settings_reset)
-    TextView reset;
-
-    @Bind(R.id.settings_info)
-    TextView info;
-
-    @Bind(R.id.settings_tutorial)
-    TextView tutorial;
-
-    @Bind(R.id.settings_contribute)
-    TextView contribute;
+    private FragmentSettingsBinding binding;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        ViewGroup rootView = (ViewGroup) inflater.inflate(
-                R.layout.fragment_settings, container, false);
-        ButterKnife.bind(this, rootView);
+        binding = FragmentSettingsBinding.inflate(inflater, container, false);
+
+        binding.settingsContribute.setOnClickListener(v -> onClick_contribute());
+        binding.settingsReset.setOnClickListener(v -> onClick_reset());
+        binding.settingsRateUs.setOnClickListener(v -> rateUs());
+        binding.settingsInfo.setOnClickListener(v -> onClick_info());
+        binding.settingsTutorial.setOnClickListener(v -> onClick_tutorial());
+
         Typeface typeFace = Typeface.createFromAsset(getActivity().getAssets(), "tagus.ttf");
-        TextView heading = (TextView) rootView.findViewById(R.id.settings_tv_heading);
-        heading.setTypeface(typeFace);
+        binding.settingsTvHeading.setTypeface(typeFace);
         setupSoundSwitch();
-        return rootView;
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 
     public void setupSoundSwitch() {
         SoundManager.playSwipeSound(getActivity());
         pref = getContext().getSharedPreferences(Constants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
-        volume.setChecked(pref.getString(Constants.VOLUME, "Y").equals("Y"));
+        binding.switchButton.setChecked(pref.getString(Constants.VOLUME, "Y").equals("Y"));
         final SharedPreferences.Editor editor = pref.edit();
-        volume.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        binding.switchButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -87,13 +79,11 @@ public class SettingsFragment extends Fragment {
         });
     }
 
-    @OnClick(R.id.settings_contribute)
     public void onClick_contribute() {
         SoundManager.playButtonClickSound(getActivity());
         startActivity(new Intent(getActivity(), ContributeActivity.class));
     }
 
-    @OnClick(R.id.settings_reset)
     public void onClick_reset() {
         SoundManager.playButtonClickSound(getActivity());
         pref = getContext().getSharedPreferences(Constants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
@@ -104,8 +94,8 @@ public class SettingsFragment extends Fragment {
                 .create();
         dialog.show();
 
-        TextView yes = (TextView) dialogView.findViewById(R.id.yes_reset);
-        TextView no = (TextView) dialogView.findViewById(R.id.no_reset);
+        android.widget.TextView yes = (android.widget.TextView) dialogView.findViewById(R.id.yes_reset);
+        android.widget.TextView no = (android.widget.TextView) dialogView.findViewById(R.id.no_reset);
 
         yes.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -129,7 +119,6 @@ public class SettingsFragment extends Fragment {
         });
     }
 
-    @OnClick(R.id.settings_rate_us)
     public void rateUs() {
         Uri uri = Uri.parse("market://details?id=" + getActivity().getPackageName());
         Intent myAppLinkToMarket = new Intent(Intent.ACTION_VIEW, uri);
@@ -140,13 +129,11 @@ public class SettingsFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.settings_info)
     public void onClick_info() {
         SoundManager.playButtonClickSound(getActivity());
         startActivity(new Intent(getActivity(), AboutActivity.class));
     }
 
-    @OnClick(R.id.settings_tutorial)
     public void onClick_tutorial() {
         SoundManager.playButtonClickSound(getActivity());
         startActivity(new Intent(getActivity(), HelpActivity.class));

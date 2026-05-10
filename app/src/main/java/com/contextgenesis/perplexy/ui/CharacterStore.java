@@ -5,54 +5,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.HorizontalScrollView;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.contextgenesis.perplexy.R;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
+import com.contextgenesis.perplexy.databinding.ActivityCharacterStoreBinding;
 
 public class CharacterStore extends Activity {
 
-    @Bind(R.id.store_back)
-    ImageView back;
-
-    @Bind(R.id.store_image)
-    ImageView characterImage;
-
-    @Bind(R.id.store_character_name)
-    TextView characterName;
-
-    @Bind(R.id.store_lock_image)
-    ImageView lockImage;
-
-    @Bind(R.id.store_by_me)
-    Button buyButton;
-
-    @Bind(R.id.storeCharacterOption1)
-    LinearLayout characterOption1;
-    @Bind(R.id.storeCharacterOption2)
-    LinearLayout characterOption2;
-    @Bind(R.id.storeCharacterOption3)
-    LinearLayout characterOption3;
-    @Bind(R.id.storeCharacterOption4)
-    LinearLayout characterOption4;
-
-    @Bind(R.id.store_horizontal_scroll)
-    HorizontalScrollView scrollView;
-
-    @Bind(R.id.store_ll)
-    LinearLayout linearLayout;
-
-    @Bind(R.id.store_left)
-    ImageView leftButton;
-    @Bind(R.id.store_right)
-    ImageView rightButton;
+    private ActivityCharacterStoreBinding binding;
 
     public static final int CHARACTER_GOOD_BWOY = 0;
     public static final int CHARACTER_SUPER_HERO = 1;
@@ -80,52 +39,53 @@ public class CharacterStore extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_character_store);
-        ButterKnife.bind(this);
+        binding = ActivityCharacterStoreBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        binding.storeByMe.setOnClickListener(v -> buyButton());
+        binding.storeCharacterOption1.setOnClickListener(v -> storeCharacterOption1());
+        binding.storeCharacterOption2.setOnClickListener(v -> storeCharacterOption2());
+        binding.storeCharacterOption3.setOnClickListener(v -> storeCharacterOption3());
+        binding.storeCharacterOption4.setOnClickListener(v -> storeCharacterOption4());
+        binding.storeBack.setOnClickListener(v -> storeBack());
+        binding.storeLeft.setOnClickListener(v -> storeLeft());
+        binding.storeRight.setOnClickListener(v -> storeRight());
 
         setCharacterNameAndImage(getCurrentCharacter(getApplicationContext()));
         currentCharacter = getCurrentCharacter(getApplicationContext());
 
     }
 
-    @OnClick(R.id.store_by_me)
     public void buyButton() {
         setUnlockedCharacters(getApplicationContext(), currentCharacter);
         setCharacterNameAndImage(currentCharacter);
         setCurrentCharacter(getApplicationContext(), currentCharacter);
     }
 
-    @OnClick(R.id.storeCharacterOption1)
     public void storeCharacterOption1() {
         setCharacterNameAndImage(CHARACTER_GOOD_BWOY);
     }
 
-    @OnClick(R.id.storeCharacterOption2)
     public void storeCharacterOption2() {
         setCharacterNameAndImage(CHARACTER_SUPER_HERO);
     }
 
-    @OnClick(R.id.storeCharacterOption3)
     public void storeCharacterOption3() {
         setCharacterNameAndImage(CHARACTER_BOX_CARTOON);
     }
 
-    @OnClick(R.id.storeCharacterOption4)
     public void storeCharacterOption4() {
         setCharacterNameAndImage(CHARACTER_MINIONS);
     }
 
-    @OnClick(R.id.store_back)
     public void storeBack() {
         onBackPressed();
     }
 
-    @OnClick(R.id.store_left)
     public void storeLeft() {
         setCharacterNameAndImage(--currentCharacter);
     }
 
-    @OnClick(R.id.store_right)
     public void storeRight() {
         setCharacterNameAndImage(++currentCharacter);
     }
@@ -135,44 +95,44 @@ public class CharacterStore extends Activity {
         removeAllBorders();
         switch (CHARACTER_TYPES[WHICH]) {
             case CHARACTER_GOOD_BWOY:
-                characterName.setText("Hi! I'm the Good Bwoy");
-                characterImage.setImageResource(R.drawable.character_happy_closed_128);
-                characterOption1.setBackgroundResource(R.drawable.transparent_border);
+                binding.storeCharacterName.setText("Hi! I'm the Good Bwoy");
+                binding.storeImage.setImageResource(R.drawable.character_happy_closed_128);
+                binding.storeCharacterOption1.setBackgroundResource(R.drawable.transparent_border);
                 break;
             case CHARACTER_SUPER_HERO:
-                characterName.setText("Hi! I'm za Super Hero");
-                characterImage.setImageResource(R.drawable.monster_happy_open);
-                characterOption2.setBackgroundResource(R.drawable.transparent_border);
+                binding.storeCharacterName.setText("Hi! I'm za Super Hero");
+                binding.storeImage.setImageResource(R.drawable.monster_happy_open);
+                binding.storeCharacterOption2.setBackgroundResource(R.drawable.transparent_border);
                 break;
             case CHARACTER_BOX_CARTOON:
-                characterName.setText("Hi! I'm a Box Cartoon");
-                characterImage.setImageResource(R.drawable.human_happy_open);
-                characterOption3.setBackgroundResource(R.drawable.transparent_border);
+                binding.storeCharacterName.setText("Hi! I'm a Box Cartoon");
+                binding.storeImage.setImageResource(R.drawable.human_happy_open);
+                binding.storeCharacterOption3.setBackgroundResource(R.drawable.transparent_border);
                 break;
             case CHARACTER_MINIONS:
-                characterName.setText("Hi! I'm la Minion");
-                characterImage.setImageResource(R.drawable.character_happy_closed_128);
-                characterOption4.setBackgroundResource(R.drawable.transparent_border);
+                binding.storeCharacterName.setText("Hi! I'm la Minion");
+                binding.storeImage.setImageResource(R.drawable.character_happy_closed_128);
+                binding.storeCharacterOption4.setBackgroundResource(R.drawable.transparent_border);
                 break;
         }
 
         if (getUnlockedCharacters(getApplicationContext()).charAt(WHICH) == '0') {
-            lockImage.setVisibility(View.VISIBLE);
-            buyButton.setText("Buy Me!");
+            binding.storeLockImage.setVisibility(View.VISIBLE);
+            binding.storeByMe.setText("Buy Me!");
         } else {
-            buyButton.setText("Use Me!");
-            lockImage.setVisibility(View.GONE);
+            binding.storeByMe.setText("Use Me!");
+            binding.storeLockImage.setVisibility(View.GONE);
         }
 
         if (currentCharacter == 0) {
-            leftButton.setVisibility(View.GONE);
+            binding.storeLeft.setVisibility(View.GONE);
         } else {
-            leftButton.setVisibility(View.VISIBLE);
+            binding.storeLeft.setVisibility(View.VISIBLE);
         }
         if (currentCharacter == CHARACTER_TYPES.length - 1) {
-            rightButton.setVisibility(View.GONE);
+            binding.storeRight.setVisibility(View.GONE);
         } else {
-            rightButton.setVisibility(View.VISIBLE);
+            binding.storeRight.setVisibility(View.VISIBLE);
         }
     }
 
@@ -249,9 +209,9 @@ public class CharacterStore extends Activity {
     }
 
     private void removeAllBorders() {
-        characterOption1.setBackgroundResource(0);
-        characterOption2.setBackgroundResource(0);
-        characterOption3.setBackgroundResource(0);
-        characterOption4.setBackgroundResource(0);
+        binding.storeCharacterOption1.setBackgroundResource(0);
+        binding.storeCharacterOption2.setBackgroundResource(0);
+        binding.storeCharacterOption3.setBackgroundResource(0);
+        binding.storeCharacterOption4.setBackgroundResource(0);
     }
 }

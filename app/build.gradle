@@ -11,6 +11,9 @@ android {
         versionCode 8
         versionName "1.5.pY.8"
     }
+    buildFeatures {
+        viewBinding true
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -32,7 +35,6 @@ dependencies {
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'me.relex:circleindicator:2.1.6'
-    implementation 'com.jakewharton:butterknife:7.0.1'
     implementation 'com.github.satyan:sugar:1.5'
     implementation 'com.google.android.gms:play-services-ads:8.4.0'
     implementation 'com.google.code.gson:gson:2.11.0'

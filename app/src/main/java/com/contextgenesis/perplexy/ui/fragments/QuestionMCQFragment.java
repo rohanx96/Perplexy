@@ -11,15 +11,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.callbacks.QuestionsCallback;
+import com.contextgenesis.perplexy.databinding.QuestionMcqCardBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.elements.GenericQuestion;
 import com.contextgenesis.perplexy.ui.QuestionsActivity;
@@ -28,10 +27,6 @@ import com.contextgenesis.perplexy.utils.Constants;
 import com.contextgenesis.perplexy.utils.DrawingView;
 import com.contextgenesis.perplexy.utils.JSONUtils;
 import com.contextgenesis.perplexy.utils.SoundManager;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 /**
  * Created by rose on 7/3/16.
@@ -45,29 +40,7 @@ public class QuestionMCQFragment extends Fragment {
     SharedPreferences pref;
     ViewGroup container;
 
-    @Bind(R.id.qcard_mcq_question)
-    TextView tvQuestion;
-
-    @Bind(R.id.qcard_mcq_options_ll)
-    LinearLayout llOptions;
-
-    @Bind(R.id.qcard_mcq_previous)
-    ImageButton prevQuestion;
-
-    @Bind(R.id.qcard_mcq_next)
-    ImageButton nextQuestion;
-
-    @Bind(R.id.qcard_mcq_option1)
-    TextView tvOption1;
-    @Bind(R.id.qcard_mcq_option2)
-    TextView tvOption2;
-    @Bind(R.id.qcard_mcq_option3)
-    TextView tvOption3;
-    @Bind(R.id.qcard_mcq_option4)
-    TextView tvOption4;
-
-    @Bind(R.id.textAreaScroller)
-    ScrollView scroll;
+    private QuestionMcqCardBinding binding;
 
     private boolean isUIVisibleToUser = false;
     private RelativeLayout cardContent;
@@ -75,11 +48,17 @@ public class QuestionMCQFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         this.container = container;
-        View rootView = inflater.inflate(R.layout.question_mcq_card, container, false);
+        binding = QuestionMcqCardBinding.inflate(inflater, container, false);
 
-        ButterKnife.bind(this, rootView);
+        binding.canvasPull.setOnClickListener(v -> canvasClick());
+        binding.qcardMcqOption1.setOnClickListener(v -> onClickOption1(v));
+        binding.qcardMcqOption2.setOnClickListener(v -> onClickOption2(v));
+        binding.qcardMcqOption3.setOnClickListener(v -> onClickOption3(v));
+        binding.qcardMcqOption4.setOnClickListener(v -> onClickOption4(v));
+        binding.qcardMcqNext.setOnClickListener(v -> nextQuestion());
+        binding.qcardMcqPrevious.setOnClickListener(v -> previousQuestion());
 
-        this.cardContent = (RelativeLayout) rootView.findViewById(R.id.question_card_content);
+        this.cardContent = (RelativeLayout) binding.getRoot().findViewById(R.id.question_card_content);
         //setCardContent(cardContent);
 
         this.mCallback = (QuestionsCallback) getActivity();
@@ -93,22 +72,22 @@ public class QuestionMCQFragment extends Fragment {
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
         int height = displaymetrics.heightPixels;
 
-        scroll.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height/4));
+        binding.textAreaScroller.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height/4));
 
-        tvQuestion.setText(genericQuestion.question);
+        binding.qcardMcqQuestion.setText(genericQuestion.question);
 
         if (genericQuestion.question_number == 1) {
-            this.prevQuestion.setVisibility(View.GONE);
+            binding.qcardMcqPrevious.setVisibility(View.GONE);
         }
 
         if (genericQuestion.question_number == Constants.RIDDLE_COUNT && genericQuestion.category == Constants.GAME_TYPE_RIDDLE) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardMcqNext.setVisibility(View.GONE);
         }
         if (genericQuestion.question_number == Constants.SEQUENCE_COUNT && genericQuestion.category == Constants.GAME_TYPE_SEQUENCES) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardMcqNext.setVisibility(View.GONE);
         }
         if (genericQuestion.question_number == Constants.LOGIC_QUESTION && genericQuestion.category == Constants.GAME_TYPE_LOGIC) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardMcqNext.setVisibility(View.GONE);
         }
 
         try {
@@ -116,41 +95,44 @@ public class QuestionMCQFragment extends Fragment {
 
             switch (option.length) {
                 case 2:
-                    tvOption1.setText(option[0]);
-                    tvOption2.setText(option[1]);
-                    tvOption3.setVisibility(View.GONE);
-                    tvOption4.setVisibility(View.GONE);
+                    binding.qcardMcqOption1.setText(option[0]);
+                    binding.qcardMcqOption2.setText(option[1]);
+                    binding.qcardMcqOption3.setVisibility(View.GONE);
+                    binding.qcardMcqOption4.setVisibility(View.GONE);
                     break;
                 case 3:
-                    tvOption1.setText(option[0]);
-                    tvOption2.setText(option[1]);
-                    tvOption3.setText(option[2]);
-                    tvOption4.setVisibility(View.GONE);
+                    binding.qcardMcqOption1.setText(option[0]);
+                    binding.qcardMcqOption2.setText(option[1]);
+                    binding.qcardMcqOption3.setText(option[2]);
+                    binding.qcardMcqOption4.setVisibility(View.GONE);
                     break;
                 case 4:
-                    tvOption1.setText(option[0]);
-                    tvOption2.setText(option[1]);
-                    tvOption3.setText(option[2]);
-                    tvOption4.setText(option[3]);
+                    binding.qcardMcqOption1.setText(option[0]);
+                    binding.qcardMcqOption2.setText(option[1]);
+                    binding.qcardMcqOption3.setText(option[2]);
+                    binding.qcardMcqOption4.setText(option[3]);
                     break;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return rootView;
+        return binding.getRoot();
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
+    }
 
-    @OnClick(R.id.canvas_pull)
     public void canvasClick() {
         if (isUIVisibleToUser) {
-            DrawingView.setUpCanvas(getContext(), QuestionsActivity.convertDip2Pixels(getContext(),70) + tvQuestion.getHeight());
+            DrawingView.setUpCanvas(getContext(), QuestionsActivity.convertDip2Pixels(getContext(),70) + binding.qcardMcqQuestion.getHeight());
             SoundManager.playButtonClickSound(getActivity());
         }
     }
 
-    @OnClick(R.id.qcard_mcq_option1)
     public void onClickOption1(View view) {
         if (isUIVisibleToUser) {
             optionConfirmation(1);
@@ -158,7 +140,6 @@ public class QuestionMCQFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_mcq_option2)
     public void onClickOption2(View view) {
         if (isUIVisibleToUser) {
             optionConfirmation(2);
@@ -166,7 +147,6 @@ public class QuestionMCQFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_mcq_option3)
     public void onClickOption3(View view) {
         if (isUIVisibleToUser) {
             optionConfirmation(3);
@@ -174,7 +154,6 @@ public class QuestionMCQFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_mcq_option4)
     public void onClickOption4(View view) {
         if (isUIVisibleToUser) {
             optionConfirmation(4);
@@ -195,43 +174,43 @@ public class QuestionMCQFragment extends Fragment {
 
         switch (lastclick) {
             case 1:
-                llOptions.removeViewAt(1);
-                tvOption1.setVisibility(View.VISIBLE);
+                binding.qcardMcqOptionsLl.removeViewAt(1);
+                binding.qcardMcqOption1.setVisibility(View.VISIBLE);
                 break;
             case 2:
-                llOptions.removeViewAt(2);
-                tvOption2.setVisibility(View.VISIBLE);
+                binding.qcardMcqOptionsLl.removeViewAt(2);
+                binding.qcardMcqOption2.setVisibility(View.VISIBLE);
                 break;
             case 3:
-                llOptions.removeViewAt(3);
-                tvOption3.setVisibility(View.VISIBLE);
+                binding.qcardMcqOptionsLl.removeViewAt(3);
+                binding.qcardMcqOption3.setVisibility(View.VISIBLE);
                 break;
             case 4:
-                llOptions.removeViewAt(4);
-                tvOption4.setVisibility(View.VISIBLE);
+                binding.qcardMcqOptionsLl.removeViewAt(4);
+                binding.qcardMcqOption4.setVisibility(View.VISIBLE);
                 break;
         }
 
         switch (n) {
             case 1:
                 lastclick = 1;
-                llOptions.addView(view2, 1);
-                tvOption1.setVisibility(View.GONE);
+                binding.qcardMcqOptionsLl.addView(view2, 1);
+                binding.qcardMcqOption1.setVisibility(View.GONE);
                 break;
             case 2:
                 lastclick = 2;
-                llOptions.addView(view2, 2);
-                tvOption2.setVisibility(View.GONE);
+                binding.qcardMcqOptionsLl.addView(view2, 2);
+                binding.qcardMcqOption2.setVisibility(View.GONE);
                 break;
             case 3:
                 lastclick = 3;
-                llOptions.addView(view2, 3);
-                tvOption3.setVisibility(View.GONE);
+                binding.qcardMcqOptionsLl.addView(view2, 3);
+                binding.qcardMcqOption3.setVisibility(View.GONE);
                 break;
             case 4:
                 lastclick = 4;
-                llOptions.addView(view2, 4);
-                tvOption4.setVisibility(View.GONE);
+                binding.qcardMcqOptionsLl.addView(view2, 4);
+                binding.qcardMcqOption4.setVisibility(View.GONE);
                 break;
         }
 
@@ -244,19 +223,19 @@ public class QuestionMCQFragment extends Fragment {
                 switch (n) {
                     case 1:
                         view2.setVisibility(View.GONE);
-                        tvOption1.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption1.setVisibility(View.VISIBLE);
                         break;
                     case 2:
                         view2.setVisibility(View.GONE);
-                        tvOption2.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption2.setVisibility(View.VISIBLE);
                         break;
                     case 3:
                         view2.setVisibility(View.GONE);
-                        tvOption3.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption3.setVisibility(View.VISIBLE);
                         break;
                     case 4:
                         view2.setVisibility(View.GONE);
-                        tvOption4.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption4.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -268,22 +247,22 @@ public class QuestionMCQFragment extends Fragment {
                 switch (n) {
                     case 1:
                         view2.setVisibility(View.GONE);
-                        tvOption1.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption1.setVisibility(View.VISIBLE);
                         isRight(1 + "");
                         break;
                     case 2:
                         view2.setVisibility(View.GONE);
-                        tvOption2.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption2.setVisibility(View.VISIBLE);
                         isRight(2 + "");
                         break;
                     case 3:
                         view2.setVisibility(View.GONE);
-                        tvOption3.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption3.setVisibility(View.VISIBLE);
                         isRight(3 + "");
                         break;
                     case 4:
                         view2.setVisibility(View.GONE);
-                        tvOption4.setVisibility(View.VISIBLE);
+                        binding.qcardMcqOption4.setVisibility(View.VISIBLE);
                         isRight(4 + "");
                         break;
                 }
@@ -345,7 +324,6 @@ public class QuestionMCQFragment extends Fragment {
         lockQuestionIfRequired();
     }
 
-    @OnClick(R.id.qcard_mcq_next)
     public void nextQuestion() {
         if (isUIVisibleToUser) {
             ViewPager pager = (ViewPager) getActivity().findViewById(R.id.questions_activity_pager);
@@ -354,7 +332,6 @@ public class QuestionMCQFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_mcq_previous)
     public void previousQuestion() {
         if (isUIVisibleToUser) {
             ViewPager pager = (ViewPager) getActivity().findViewById(R.id.questions_activity_pager);
@@ -377,6 +354,7 @@ public class QuestionMCQFragment extends Fragment {
     }
 
     public void lockQuestionIfRequired() {
+        if (binding == null) return;
         //Log.i("question ", answer);
         Log.i("text card ", "position " + POSITION + " category " + CATEGORY + " status " + GenericAnswerDetails.getStatus(POSITION, CATEGORY));
         switch (GenericAnswerDetails.getStatus(POSITION, CATEGORY)) {
@@ -439,4 +417,3 @@ public class QuestionMCQFragment extends Fragment {
         }
     }
 }
-

@@ -20,6 +20,7 @@ import com.contextgenesis.perplexy.adapters.NumberLineAdapter;
 import com.contextgenesis.perplexy.billingUtils.IabHelper;
 import com.contextgenesis.perplexy.billingUtils.IabResult;
 import com.contextgenesis.perplexy.billingUtils.Inventory;
+import com.contextgenesis.perplexy.databinding.ActivityNumberLineBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.ui.dialogs.BankDialog;
 import com.contextgenesis.perplexy.utils.Constants;
@@ -29,10 +30,6 @@ import com.contextgenesis.perplexy.utils.SoundManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 public class NumberLineActivity extends AppCompatActivity {
     private View mContainer;
     private int mTimeCount = 0;
@@ -40,32 +37,28 @@ public class NumberLineActivity extends AppCompatActivity {
 
     int CATEGORY;
 
-    @Bind(R.id.activity_number_line_title)
-    TextView tvTitle;
-
-    @Bind(R.id.activity_coin_text)
-    TextView coin_display;
-
-    /**
-     * @Bind(R.id.activity_number_line_bubble_ll) LinearLayout bubbleLL;
-     * @Bind(R.id.activity_number_line_bubble_im) ImageView bubble;
-     */
+    private ActivityNumberLineBinding binding;
 
     IabHelper mHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_number_line);
-        ButterKnife.bind(this);
+        binding = ActivityNumberLineBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        binding.activityNumberLineBack.setOnClickListener(v -> goBack());
+        binding.activityCoinText.setOnClickListener(v -> onClick_contribute());
+        binding.activityCoinImage.setOnClickListener(v -> onClick_contribute2());
+
         CATEGORY = getIntent().getIntExtra(Constants.BUNDLE_QUESTION_CATEGORY, -1);
-        tvTitle.setText("Select Level");
-        mContainer = findViewById(R.id.activity_number_line_container);
+        binding.activityNumberLineTitle.setText("Select Level");
+        mContainer = binding.getRoot().findViewById(R.id.activity_number_line_container);
         SharedPreferences prefs = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
-        coin_display.setText(prefs.getLong(Constants.PREF_COINS, 0) + "");
+        binding.activityCoinText.setText(prefs.getLong(Constants.PREF_COINS, 0) + "");
 
         //bubbleLL.setVisibility(View.GONE);
-        ListView listView = (ListView) findViewById(R.id.activity_number_line_listview);
+        ListView listView = (ListView) binding.getRoot().findViewById(R.id.activity_number_line_listview);
         NumberLineAdapter adapter = new NumberLineAdapter(this, new ArrayList<GenericAnswerDetails>());
         listView.setAdapter(adapter);
 
@@ -77,7 +70,7 @@ public class NumberLineActivity extends AppCompatActivity {
         /* Make the activity fullscreen */
 
         SharedPreferences prefs = getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
-        coin_display.setText(prefs.getLong(Constants.PREF_COINS, 0) + "");
+        binding.activityCoinText.setText(prefs.getLong(Constants.PREF_COINS, 0) + "");
 
         mContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -91,7 +84,7 @@ public class NumberLineActivity extends AppCompatActivity {
         }
         /* Adapter list needs to be initialised here because we need to refresh list after returning to activity */
         ArrayList<GenericAnswerDetails> answerDetails = GenericAnswerDetails.listAll(CATEGORY);
-        ListView listView = (ListView) findViewById(R.id.activity_number_line_listview);
+        ListView listView = (ListView) binding.getRoot().findViewById(R.id.activity_number_line_listview);
         ((NumberLineAdapter) listView.getAdapter()).setAnswerDetails(answerDetails);
         ((NumberLineAdapter) listView.getAdapter()).notifyDataSetChanged();
 
@@ -144,19 +137,16 @@ public class NumberLineActivity extends AppCompatActivity {
         this.isAnimationRunning = animationRunning;
     }
 
-    @OnClick(R.id.activity_number_line_back)
     public void goBack() {
         SoundManager.playButtonClickSound(getApplicationContext());
         onBackPressed();
     }
 
-    @OnClick(R.id.activity_coin_text)
     public void onClick_contribute() {
         //  TODO: In app include later
 //        new BankDialog(this).show();
     }
 
-    @OnClick(R.id.activity_coin_image)
     public void onClick_contribute2() {
         //  TODO: In app include later
 //        new BankDialog(this).show();

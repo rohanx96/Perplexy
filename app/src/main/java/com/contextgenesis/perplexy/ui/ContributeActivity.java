@@ -5,64 +5,44 @@ package com.contextgenesis.perplexy.ui;
  */
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.Window;
-import android.widget.EditText;
 import android.widget.Toast;
 
-import com.contextgenesis.perplexy.R;
+import com.contextgenesis.perplexy.databinding.ActivityContributeBinding;
 import com.contextgenesis.perplexy.utils.Coins;
 import com.contextgenesis.perplexy.utils.SoundManager;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 public class ContributeActivity extends Activity {
 
-
-    @Bind(R.id.contribute_question)
-    EditText question;
-
-    @Bind(R.id.contribute_hint)
-    EditText hint;
-
-    @Bind(R.id.contribute_answer)
-    EditText solution;
-
-    @Bind(R.id.contribute_category)
-    EditText category;
-
-    @Bind(R.id.contribute_options)
-    EditText options;
+    private ActivityContributeBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_contribute);
-        ButterKnife.bind(this);
+        binding = ActivityContributeBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        binding.contributeBack.setOnClickListener(v -> goBack());
+        binding.contributeSubmit.setOnClickListener(v -> onClick_submit());
     }
 
-    @OnClick(R.id.contribute_back)
     public void goBack() {
         SoundManager.playButtonClickSound(getApplicationContext());
         onBackPressed();
     }
 
-    @OnClick(R.id.contribute_submit)
     public void onClick_submit() {
-        if (question.getText().toString().length() != 0 && hint.getText().toString().length() != 0
-                && category.getText().toString().length() != 0 && solution.getText().toString().length() != 0) {
+        if (binding.contributeQuestion.getText().toString().length() != 0 && binding.contributeHint.getText().toString().length() != 0
+                && binding.contributeCategory.getText().toString().length() != 0 && binding.contributeAnswer.getText().toString().length() != 0) {
             Intent email = new Intent(Intent.ACTION_SEND);
             email.putExtra(Intent.EXTRA_EMAIL, new String[]{"contextgenesis@gmail.com"});
             email.putExtra(Intent.EXTRA_SUBJECT, "Perplexy Question Contribution");
-            email.putExtra(Intent.EXTRA_TEXT, "Hi,\n    I would like to contribute a question for app Perplexy.\n\nQuestion: " + question.getText().toString() +
-                    "\nCategory: " + category.getText().toString() +
-                    "\nHint: " + hint.getText().toString() +
-                    "\nSolution: " + solution.getText().toString() +
-                    "\nOptions: " + options.getText().toString());
+            email.putExtra(Intent.EXTRA_TEXT, "Hi,\n    I would like to contribute a question for app Perplexy.\n\nQuestion: " + binding.contributeQuestion.getText().toString() +
+                    "\nCategory: " + binding.contributeCategory.getText().toString() +
+                    "\nHint: " + binding.contributeHint.getText().toString() +
+                    "\nSolution: " + binding.contributeAnswer.getText().toString() +
+                    "\nOptions: " + binding.contributeOptions.getText().toString());
 
             //need this to prompts email client only
             email.setType("message/rfc822");
@@ -72,17 +52,17 @@ public class ContributeActivity extends Activity {
 
             startActivity(Intent.createChooser(email, "Choose an Email client :"));
         } else {
-            if (question.getText().toString().length() == 0) {
-                question.requestFocus();
+            if (binding.contributeQuestion.getText().toString().length() == 0) {
+                binding.contributeQuestion.requestFocus();
                 Toast.makeText(getApplicationContext(), "Question Field is required", Toast.LENGTH_LONG).show();
-            } else if (category.getText().toString().length() == 0) {
-                category.requestFocus();
+            } else if (binding.contributeCategory.getText().toString().length() == 0) {
+                binding.contributeCategory.requestFocus();
                 Toast.makeText(getApplicationContext(), "Category Field is required", Toast.LENGTH_LONG).show();
-            } else if (solution.getText().toString().length() == 0) {
-                solution.requestFocus();
+            } else if (binding.contributeAnswer.getText().toString().length() == 0) {
+                binding.contributeAnswer.requestFocus();
                 Toast.makeText(getApplicationContext(), "Solution Field is required", Toast.LENGTH_LONG).show();
-            } else if (hint.getText().toString().length() == 0) {
-                hint.requestFocus();
+            } else if (binding.contributeHint.getText().toString().length() == 0) {
+                binding.contributeHint.requestFocus();
                 Toast.makeText(getApplicationContext(), "Hint Field is required", Toast.LENGTH_LONG).show();
             }
         }

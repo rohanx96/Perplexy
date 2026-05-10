@@ -16,18 +16,15 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.contextgenesis.perplexy.R;
 import com.contextgenesis.perplexy.callbacks.QuestionsCallback;
+import com.contextgenesis.perplexy.databinding.QuestionTextboxCardBinding;
 import com.contextgenesis.perplexy.elements.GenericAnswerDetails;
 import com.contextgenesis.perplexy.elements.GenericQuestion;
 import com.contextgenesis.perplexy.ui.QuestionsActivity;
@@ -41,10 +38,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 /**
  * Created by rish on 9/3/16.
  */
@@ -56,29 +49,7 @@ public class QuestionTextBoxFragment extends Fragment {
     GenericQuestion genericQuestion;
     SharedPreferences pref;
 
-    @Bind(R.id.qcard_textbox_previous)
-    ImageButton prevQuestion;
-
-    @Bind(R.id.qcard_textbox_next)
-    ImageButton nextQuestion;
-
-    @Bind(R.id.qcard_textbox_question)
-    TextView tvQuestion;
-
-    @Bind(R.id.qcard_textbox_ll_row1_q)
-    LinearLayout row1;
-
-    @Bind(R.id.qcard_textbox_ll_row2_q)
-    LinearLayout row2;
-
-    @Bind(R.id.qcard_textbox_editText)
-    EditText editText;
-
-    @Bind(R.id.textbox_canvas_pull)
-    Button canvas;
-
-    @Bind(R.id.textAreaScroller)
-    ScrollView scroll;
+    private QuestionTextboxCardBinding binding;
 
     ArrayList<Character> jumbledCharacters;
     String enteredCharacters = "";
@@ -90,46 +61,58 @@ public class QuestionTextBoxFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.question_textbox_card, container, false);
-        ButterKnife.bind(this, rootView);
-        this.cardContent = (RelativeLayout) rootView.findViewById(R.id.question_card_content);
+        binding = QuestionTextboxCardBinding.inflate(inflater, container, false);
+
+        binding.qcardTextboxNext.setOnClickListener(v -> nextQuestion());
+        binding.qcardTextboxPrevious.setOnClickListener(v -> previousQuestion());
+        binding.textboxCanvasPull.setOnClickListener(v -> canvas_pulldown());
+        binding.qcardTextboxImBackspace.setOnClickListener(v -> removeCharacter());
+        binding.qcardTextboxImDone.setOnClickListener(v -> checkAnswer());
+
+        this.cardContent = (RelativeLayout) binding.getRoot().findViewById(R.id.question_card_content);
         this.mCallback = (QuestionsCallback) getActivity();
         Bundle args = getArguments();
         POSITION = args.getInt(Constants.BUNDLE_QUESTION_NUMBER);
         CATEGORY = args.getInt(Constants.BUNDLE_QUESTION_CATEGORY);
         genericQuestion = JSONUtils.getQuestionAt(getActivity(), CATEGORY, POSITION - 1);
-        tvQuestion.setText(genericQuestion.question);
+        binding.qcardTextboxQuestion.setText(genericQuestion.question);
         pref = getContext().getSharedPreferences(Constants.SHARED_PREFERENCES, Context.MODE_PRIVATE);
 
         DisplayMetrics displaymetrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
         int height = displaymetrics.heightPixels;
 
-        scroll.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height / 4));
+        binding.textAreaScroller.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, height / 4));
 
         answer = genericQuestion.answer;
         lockQuestionIfRequired();
         answerPadCharacters = genericQuestion.pad_characters;
 
         if (genericQuestion.question_number == 1) {
-            this.prevQuestion.setVisibility(View.GONE);
+            binding.qcardTextboxPrevious.setVisibility(View.GONE);
         }
 
         if (genericQuestion.question_number == Constants.RIDDLE_COUNT && genericQuestion.category == Constants.GAME_TYPE_RIDDLE) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardTextboxNext.setVisibility(View.GONE);
         }
         if (genericQuestion.question_number == Constants.SEQUENCE_COUNT && genericQuestion.category == Constants.GAME_TYPE_SEQUENCES) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardTextboxNext.setVisibility(View.GONE);
         }
         if (genericQuestion.question_number == Constants.LOGIC_QUESTION && genericQuestion.category == Constants.GAME_TYPE_LOGIC) {
-            this.nextQuestion.setVisibility(View.GONE);
+            binding.qcardTextboxNext.setVisibility(View.GONE);
         }
 
         setUpJumbledCharacters();
 
         setUpBlanksAndRows();
 
-        return rootView;
+        return binding.getRoot();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        binding = null;
     }
 
     @Override
@@ -148,7 +131,6 @@ public class QuestionTextBoxFragment extends Fragment {
         Collections.shuffle(jumbledCharacters, new Random(System.currentTimeMillis()));
     }
 
-    @OnClick(R.id.qcard_textbox_next)
     public void nextQuestion() {
         if (isUIVisibleToUser) {
             ViewPager pager = (ViewPager) getActivity().findViewById(R.id.questions_activity_pager);
@@ -157,7 +139,6 @@ public class QuestionTextBoxFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.qcard_textbox_previous)
     public void previousQuestion() {
         if (isUIVisibleToUser) {
             ViewPager pager = (ViewPager) getActivity().findViewById(R.id.questions_activity_pager);
@@ -166,26 +147,23 @@ public class QuestionTextBoxFragment extends Fragment {
         }
     }
 
-    @OnClick(R.id.textbox_canvas_pull)
     public void canvas_pulldown() {
         if (isUIVisibleToUser) {
-            DrawingView.setUpCanvas(getContext(), QuestionsActivity.convertDip2Pixels(getContext(), tvQuestion.getHeight() + 80));
+            DrawingView.setUpCanvas(getContext(), QuestionsActivity.convertDip2Pixels(getContext(), binding.qcardTextboxQuestion.getHeight() + 80));
             SoundManager.playButtonClickSound(getActivity());
         }
     }
 
-    @OnClick(R.id.qcard_textbox_im_backspace)
     public void removeCharacter() {
         if (isUIVisibleToUser) {
             if (enteredCharacters.length() >= 1) {
                 enteredCharacters = enteredCharacters.substring(0, enteredCharacters.length() - 1);
-                editText.setText(enteredCharacters);
+                binding.qcardTextboxEditText.setText(enteredCharacters);
                 SoundManager.playBackClickSound(getActivity());
             }
         }
     }
 
-    @OnClick(R.id.qcard_textbox_im_done)
     public void checkAnswer() {
         if (isUIVisibleToUser) {
             SoundManager.playButtonClickSound(getActivity());
@@ -200,11 +178,12 @@ public class QuestionTextBoxFragment extends Fragment {
     }
 
     private void setUpBlanksAndRows() {
+        if (binding == null) return;
 
-        row1.removeAllViews();
-        row2.removeAllViews();
+        binding.qcardTextboxLlRow1Q.removeAllViews();
+        binding.qcardTextboxLlRow2Q.removeAllViews();
 
-        editText.setText(enteredCharacters);
+        binding.qcardTextboxEditText.setText(enteredCharacters);
 
         for (int i = 0; i < answerPadCharacters.length() / 2; i++) {
             final int m = i;
@@ -222,7 +201,7 @@ public class QuestionTextBoxFragment extends Fragment {
                 }
             });
 
-            row1.addView(answerTV);
+            binding.qcardTextboxLlRow1Q.addView(answerTV);
         }
 
         for (int i = answerPadCharacters.length() / 2; i < answerPadCharacters.length(); i++) {
@@ -241,13 +220,13 @@ public class QuestionTextBoxFragment extends Fragment {
                 }
             });
 
-            row2.addView(answerTV);
+            binding.qcardTextboxLlRow2Q.addView(answerTV);
         }
     }
 
     private void addThisCharacterToEditText(int index) {
         enteredCharacters += jumbledCharacters.get(index);
-        editText.setText(enteredCharacters);
+        binding.qcardTextboxEditText.setText(enteredCharacters);
     }
 
     public boolean isAnsweredCorrectly() {
@@ -256,7 +235,7 @@ public class QuestionTextBoxFragment extends Fragment {
             mCallback.showAd(false);
         else
             pref.edit().putInt(Constants.PREF_SHOW_AD, pref.getInt(Constants.PREF_SHOW_AD, 0) + 1).apply();
-        editText.setText("");
+        binding.qcardTextboxEditText.setText("");
         if (answer.equals(enteredCharacters)) {
             // Coins and question should be unlocked when status is available. For correct status relevant coins and question have already
             // been unlocked. For incorrect and unavailable user should not be able to answer.
@@ -333,6 +312,7 @@ public class QuestionTextBoxFragment extends Fragment {
     }
 
     public void lockQuestionIfRequired() {
+        if (binding == null) return;
         //Log.i("question ", answer);
         Log.i("text card ", "position " + POSITION + " category " + CATEGORY + " status " + GenericAnswerDetails.getStatus(POSITION, CATEGORY));
         switch (GenericAnswerDetails.getStatus(POSITION, CATEGORY)) {
@@ -364,7 +344,7 @@ public class QuestionTextBoxFragment extends Fragment {
                     }
                 });
                 cardContent.addView(lock, cardContent.getChildCount() - 2);
-                canvas.setVisibility(View.GONE);
+                binding.textboxCanvasPull.setVisibility(View.GONE);
                 break;
             case Constants.INCORRECT:
                 //mCallback.setIsQuestionLocked(true);
@@ -392,7 +372,7 @@ public class QuestionTextBoxFragment extends Fragment {
                     }
                 });
                 cardContent.addView(options_lock, cardContent.getChildCount() - 2);
-                canvas.setVisibility(View.GONE);
+                binding.textboxCanvasPull.setVisibility(View.GONE);
                 break;
         }
     }

@@ -5,8 +5,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatDialogFragment;
-import androidx.cardview.widget.CardView;
 import android.util.Log;
 import android.view.Window;
 import android.widget.Toast;
@@ -16,45 +14,32 @@ import com.contextgenesis.perplexy.billingUtils.IabHelper;
 import com.contextgenesis.perplexy.billingUtils.IabResult;
 import com.contextgenesis.perplexy.billingUtils.Inventory;
 import com.contextgenesis.perplexy.billingUtils.Purchase;
-import com.contextgenesis.perplexy.ui.NumberLineActivity;
+import com.contextgenesis.perplexy.databinding.DialogInappPurchasesBinding;
 import com.contextgenesis.perplexy.utils.Constants;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class BankDialog extends Dialog {
 
-    @Bind(R.id.cardview_stack_of_coins)
-    CardView stack;
+    private DialogInappPurchasesBinding binding;
 
     IabHelper mHelper;
     Context context;
 
-    @OnClick(R.id.cardview_stack_of_coins)
     public void onClick_stack() {
         init("stack");
     }
 
-    @OnClick(R.id.cardview_pile_of_coins)
     public void onClick_pile() {
 
     }
 
-    @OnClick(R.id.cardview_bag_of_coins)
     public void onClick_bag() {
 
     }
 
-    @OnClick(R.id.cardview_chest_of_coins)
     public void onClick_chest() {
 
     }
 
-    @OnClick(R.id.cardview_vault_of_coins)
     public void onClick_vault() {
 
     }
@@ -199,8 +184,14 @@ public class BankDialog extends Dialog {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.dialog_inapp_purchases);
-        ButterKnife.bind(this);
+        binding = DialogInappPurchasesBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        binding.cardviewStackOfCoins.setOnClickListener(v -> onClick_stack());
+        binding.cardviewPileOfCoins.setOnClickListener(v -> onClick_pile());
+        binding.cardviewBagOfCoins.setOnClickListener(v -> onClick_bag());
+        binding.cardviewChestOfCoins.setOnClickListener(v -> onClick_chest());
+        binding.cardviewVaultOfCoins.setOnClickListener(v -> onClick_vault());
 
         this.setOnDismissListener(new OnDismissListener() {
             @Override

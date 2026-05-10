@@ -25,10 +25,9 @@ import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.contextgenesis.perplexy.databinding.ActivityQuestionsBinding;
 import com.contextgenesis.perplexy.ui.dialogs.BankDialog;
 import com.contextgenesis.perplexy.utils.FallingDrawables;
 import com.contextgenesis.perplexy.utils.ShareQuestion;
@@ -51,10 +50,6 @@ import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.ads.reward.RewardItem;
 import com.google.android.gms.ads.reward.RewardedVideoAd;
 import com.google.android.gms.ads.reward.RewardedVideoAdListener;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 /**
  * Created by rose on 6/3/16.
@@ -79,40 +74,23 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
 
     int CATEGORY = -1;
 
-    @Bind(R.id.questions_activity_correct_indicator)
-    ImageView correct_indicator;
-
-    @Bind(R.id.questions_activity_level)
-    TextView tvLevel;
-
-    @Bind(R.id.questions_activity_container)
-    ViewGroup mContainer;
-
-    @Bind(R.id.questions_activity_pager)
-    ViewPager pager;
-
-    @Bind(R.id.questions_activity_coin_text)
-    TextView coins_display;
-
-    @Bind(R.id.linearLayout)
-    RelativeLayout appbar;
+    private ActivityQuestionsBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_questions);
+        binding = ActivityQuestionsBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setAllowEnterTransitionOverlap(false);
 //            getWindow().setAllowReturnTransitionOverlap(false);
         }
-        ButterKnife.bind(this);
 
         /* The page position is one less than question number. Note question number is passed to activity instead of position */
         mCurrentPage = getIntent().getIntExtra(Constants.BUNDLE_QUESTION_NUMBER, 0) - 1;
         CATEGORY = getIntent().getIntExtra(Constants.BUNDLE_QUESTION_CATEGORY, -1);
 
-        View back = findViewById(R.id.questions_activity_back);
-        back.setOnClickListener(new View.OnClickListener() {
+        binding.questionsActivityBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 //                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -123,24 +101,25 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
             }
         });
 
+        binding.questionsActivityCoinText.setOnClickListener(v -> onClick_contribute());
+        binding.questionsActivityCoinImage.setOnClickListener(v -> onClick_contribute2());
+
         if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.CORRECT) {
-            correct_indicator.setImageResource(R.drawable.tick_green);
+            binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.tick_green);
         } else if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.INCORRECT) {
-            correct_indicator.setImageResource(R.drawable.cross);
+            binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.cross);
         } else {
-            correct_indicator.setImageResource(0);
+            binding.questionsActivityCorrectIndicator.setImageResource(0);
         }
         setupCharacter();
         setupAd();
     }
 
-    @OnClick(R.id.questions_activity_coin_text)
     public void onClick_contribute() {
 //     TODO: in app include later
 //     new BankDialog(this).show();
     }
 
-    @OnClick(R.id.questions_activity_coin_image)
     public void onClick_contribute2() {
 //     TODO: in app include later
 //     new BankDialog(this).show();
@@ -151,7 +130,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     protected void onResume() {
         super.onResume();
         /* Make the activity fullscreen */
-        mContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
+        binding.questionsActivityContainer.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
@@ -162,14 +141,14 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
             actionBar.hide();
         }
         setUpViewPager();
-        mContainer.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
-        appbar.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
+        binding.questionsActivityContainer.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
+        binding.linearLayout.setBackgroundColor(FallingDrawables.getLightBackgroundColor(mCurrentPage, getApplicationContext()));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        pager.clearOnPageChangeListeners();
+        binding.questionsActivityPager.clearOnPageChangeListeners();
     }
 
     @Override
@@ -184,7 +163,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                     Toast.makeText(this, "Preparing for Share", Toast.LENGTH_LONG).show();
                     ShareQuestion.shareImageWhatsapp(this);
                 } else {
-                    Snackbar.make(mContainer, "Cannot share. Please grant the write to external storage permission", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(binding.questionsActivityContainer, "Cannot share. Please grant the write to external storage permission", Snackbar.LENGTH_LONG).show();
                 }
                 return;
             }
@@ -196,17 +175,17 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
 
     private void setUpViewPager() {
         pagerAdapter = new ScreenSlidePagerAdapter(getSupportFragmentManager());
-        pager.setAdapter(pagerAdapter);
-        pager.setPageMargin(convertDip2Pixels(this, 16));
-        pager.setPageTransformer(true, new DepthPageTransformer());
+        binding.questionsActivityPager.setAdapter(pagerAdapter);
+        binding.questionsActivityPager.setPageMargin(convertDip2Pixels(this, 16));
+        binding.questionsActivityPager.setPageTransformer(true, new DepthPageTransformer());
 
-        pager.setCurrentItem(mCurrentPage);
-        tvLevel.setText("Level " + (mCurrentPage + 1));
+        binding.questionsActivityPager.setCurrentItem(mCurrentPage);
+        binding.questionsActivityLevel.setText("Level " + (mCurrentPage + 1));
 
         pref = getBaseContext().getSharedPreferences(Constants.SHARED_PREFERENCES, MODE_PRIVATE);
-        coins_display.setText(pref.getLong(Constants.PREF_COINS, 0) + " ");
+        binding.questionsActivityCoinText.setText(pref.getLong(Constants.PREF_COINS, 0) + " ");
 
-        pager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        binding.questionsActivityPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
@@ -222,7 +201,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                 colorAnimator.setDuration(500).addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        mContainer.setBackgroundColor((int) animation.getAnimatedValue());
+                        binding.questionsActivityContainer.setBackgroundColor((int) animation.getAnimatedValue());
                     }
                 });
                 ValueAnimator colorAnimator2 = ValueAnimator.ofObject(new ArgbEvaluator(),
@@ -231,13 +210,13 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                 colorAnimator.setDuration(500).addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        appbar.setBackgroundColor((int) animation.getAnimatedValue());
+                        binding.linearLayout.setBackgroundColor((int) animation.getAnimatedValue());
                     }
                 });
                 colorAnimator.start();
                 colorAnimator2.start();
                 mCurrentPage = position;
-                tvLevel.setText("Level " + (mCurrentPage + 1));
+                binding.questionsActivityLevel.setText("Level " + (mCurrentPage + 1));
                 hideCorrectAnswerFeedback();
                 hideIncorrectAnswerFeedback();
                 if (isCharacterDialogOpen) {
@@ -252,11 +231,11 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
                     CharacterUtils.setCharacterDrawable(getApplicationContext(), character, CharacterUtils.EXPRESSION_SAD_CLOSED);
 
                 if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.INCORRECT) {
-                    correct_indicator.setImageResource(R.drawable.cross);
+                    binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.cross);
                 } else if (GenericAnswerDetails.getStatus(mCurrentPage + 1, CATEGORY) == Constants.CORRECT) {
-                    correct_indicator.setImageResource(R.drawable.tick_green);
+                    binding.questionsActivityCorrectIndicator.setImageResource(R.drawable.tick_green);
                 } else
-                    correct_indicator.setImageResource(0);
+                    binding.questionsActivityCorrectIndicator.setImageResource(0);
 
                 // Remove the lock image on the fragment if question was previously locked but is now unlocked
                 // finding view by id and then removing it does not work even if unique IDs are assigne to lock image view
@@ -421,7 +400,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
             if (mVideoAd.isLoaded()) {
                 mVideoAd.show();
             } else {
-                Snackbar.make(mContainer, "Unable to load ad. Please try again later", Snackbar.LENGTH_LONG).show();
+                Snackbar.make(binding.questionsActivityContainer, "Unable to load ad. Please try again later", Snackbar.LENGTH_LONG).show();
                 requestNewVideoAd();
             }
         } else if (mInterstitialAd.isLoaded()) {
@@ -586,8 +565,8 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
 
     public void gotoQuestion(int questionNumber) {
         if (questionNumber == -1)
-            pager.setCurrentItem(mCurrentPage + 1, true);
-        else pager.setCurrentItem(questionNumber - 1, true);
+            binding.questionsActivityPager.setCurrentItem(mCurrentPage + 1, true);
+        else binding.questionsActivityPager.setCurrentItem(questionNumber - 1, true);
     }
 
     public static int convertDip2Pixels(Context context, int dip) {
@@ -714,7 +693,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
     public void afterAdWatched() {
         Coins.addCoinsFromAd(this);
         SoundManager.playCorrectAnswerSound(this);
-        coins_display.setText(String.format("%d", Coins.getCurrentCoins(this)));
+        binding.questionsActivityCoinText.setText(String.format("%d", Coins.getCurrentCoins(this)));
     }
 
     @Override
@@ -722,7 +701,7 @@ public class QuestionsActivity extends AppCompatActivity implements QuestionsCal
         Toast.makeText(this, "You earned 150 coins", Toast.LENGTH_SHORT).show();
         Coins.addCoinsFromAd(this);
         SoundManager.playCorrectAnswerSound(this);
-        coins_display.setText(String.format("%d", Coins.getCurrentCoins(this)));
+        binding.questionsActivityCoinText.setText(String.format("%d", Coins.getCurrentCoins(this)));
     }
 
     @Override
