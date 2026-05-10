@@ -3,7 +3,7 @@ package com.contextgenesis.perplexy.utils;
 import android.content.Context;
 import android.util.Log;
 
-import com.bluelinelabs.logansquare.LoganSquare;
+import com.google.gson.Gson;
 import com.contextgenesis.perplexy.elements.GenericQuestion;
 
 import java.io.BufferedReader;
@@ -83,7 +83,7 @@ public class JSONUtils {
             is.close();
             String json = new String(buffer, "UTF-8");
 
-            questionArray = LoganSquare.parse(json, com.contextgenesis.perplexy.utils.QuestionArray.class);
+            questionArray = new Gson().fromJson(json, com.contextgenesis.perplexy.utils.QuestionArray.class);
         } catch (IOException e) {
             e.printStackTrace();
         }

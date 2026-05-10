@@ -1,46 +1,44 @@
 package com.contextgenesis.perplexy.elements;
 
-import com.bluelinelabs.logansquare.annotation.JsonField;
-import com.bluelinelabs.logansquare.annotation.JsonObject;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Created by rish on 10/3/16.
  */
 
-@JsonObject
 public class GenericQuestion {
 
-    @JsonField(name = "question_number")
+    @SerializedName("question_number")
     public int question_number;
 
-    @JsonField(name = "layout_type")
+    @SerializedName("layout_type")
     public int layout_type;
 
-    @JsonField(name = "category")
+    @SerializedName("category")
     public int category;
 
-    @JsonField(name = "question_name")
+    @SerializedName("question_name")
     public String question_name;
 
-    @JsonField(name = "question")
+    @SerializedName("question")
     public String question;
 
-    @JsonField(name = "answer")
+    @SerializedName("answer")
     public String answer;
 
-    @JsonField(name = "hint")
+    @SerializedName("hint")
     public String hint;
 
-    @JsonField(name = "message")
+    @SerializedName("message")
     public String message;
 
-    @JsonField(name = "explanation")
+    @SerializedName("explanation")
     public String explanation;
 
-    @JsonField(name = "pad_characters")
+    @SerializedName("pad_characters")
     public String pad_characters;
 
-    @JsonField(name = "options")
+    @SerializedName("options")
     public String options;
 
     public GenericQuestion() {
